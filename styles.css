@@ -1127,6 +1127,14 @@ body {
   font-size: 12px;
 }
 
+.delivery-price-text {
+  color: var(--primary); /* #3D644E */
+  font-weight: 700;
+  font-size: 14px;
+  background: transparent;
+  padding: 0;
+}
+
 /* ==========================================================================
    SEGUIMIENTO DE PEDIDOS (STEPPER + RESUMEN DE PRODUCTOS COMPRADOS)
    ========================================================================== */

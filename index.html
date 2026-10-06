@@ -349,8 +349,8 @@
               <input type="radio" name="deliveryMethod" id="radioRetiro" value="retiro">
               <div class="radio-option-content">
                 <div class="radio-option-title">
-                  <span>Retiro en Local Físico (Taller ToteArt) - GRATIS ($0.00)</span>
-                  <span style="color:var(--color-primary); font-weight:700;">GRATIS ($0.00)</span>
+                  <span>Retiro en Local Físico (Taller ToteArt)</span>
+                  <span class="delivery-price-text">GRATIS ($0.00)</span>
                 </div>
                 <p class="radio-option-desc">Av. Amazonas N34-120 y Gaspar de Villarroel. Listo en 24h laborables.</p>
               </div>
@@ -361,8 +361,8 @@
               <input type="radio" name="deliveryMethod" id="radioEnvio" value="envio" checked>
               <div class="radio-option-content">
                 <div class="radio-option-title">
-                  <span>Envío a Domicilio a Todo el País <span class="surcharge-tag">(+ $5.00)</span></span>
-                  <span class="surcharge-tag">+ $5.00 USD</span>
+                  <span>Envío a Domicilio a Todo el País</span>
+                  <span class="delivery-price-text">+ $5.00 USD</span>
                 </div>
                 <p class="radio-option-desc">Entrega puerta a puerta por mensajería nacional en 3 a 5 días hábiles.</p>
               </div>
@@ -496,7 +496,7 @@
 
           <div class="summary-row">
             <span id="checkoutShippingLabel">Recargo por Envío a domicilio:</span>
-            <span id="checkoutShippingCost" class="surcharge-tag">+ $5.00 USD</span>
+            <span id="checkoutShippingCost" class="delivery-price-text">+ $5.00 USD</span>
           </div>
 
           <div class="summary-row total">
@@ -1335,14 +1335,13 @@
         if (currentDeliveryMethod === 'envio') {
           shippingLabel.textContent = 'Recargo por Envío a domicilio:';
           shippingDisplay.textContent = '+ $5.00 USD';
-          shippingDisplay.className = 'surcharge-tag';
-          shippingDisplay.style.color = '';
+          shippingDisplay.className = 'delivery-price-text';
+          shippingDisplay.removeAttribute('style');
         } else {
           shippingLabel.textContent = 'Retiro en Taller:';
           shippingDisplay.textContent = 'GRATIS ($0.00)';
-          shippingDisplay.className = '';
-          shippingDisplay.style.color = 'var(--color-primary)';
-          shippingDisplay.style.fontWeight = '700';
+          shippingDisplay.className = 'delivery-price-text';
+          shippingDisplay.removeAttribute('style');
         }
       }
 
