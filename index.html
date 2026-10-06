@@ -51,7 +51,7 @@
           </svg>
           <span class="cart-badge" id="cartBadgeCount">0</span>
         </button>
-        <button class="login-header-btn" id="loginHeaderBtn" onclick="navigateTo('guestChoice')">
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="navigateTo('login')">
           Iniciar sesión
         </button>
       </nav>
@@ -220,7 +220,7 @@
             <label for="guestPromoCheck" style="font-size: 13px; color: var(--color-text-muted);">Quiero recibir ofertas y novedades exclusivas de bordados.</label>
           </div>
           <button class="btn-checkout-primary" onclick="proceedToCheckout('invitado')">
-            Continuar a datos de envío
+            Comprar como invitado
           </button>
         </div>
 
@@ -245,6 +245,44 @@
             </a>
           </p>
         </div>
+      </div>
+    </section>
+
+    <!-- 5.1 VISTA INICIAR SESIÓN (DEDICADA DESDE NAVBAR) -->
+    <section id="view-login" class="app-view">
+      <button class="back-link" onclick="navigateTo('catalog')">
+        ← Volver al catálogo
+      </button>
+
+      <div class="auth-card" style="max-width: 480px; margin: 0 auto;">
+        <h2 class="auth-card-title" style="font-size: 22px; text-align: center;">Iniciar Sesión</h2>
+        <p class="auth-card-desc" style="text-align: center;">Accede a tu cuenta de ToteArt para gestionar tus pedidos y lista de deseos.</p>
+
+        <form onsubmit="handleLoginSubmit(event)">
+          <div class="form-group">
+            <label class="form-label">Correo electrónico *</label>
+            <input type="email" class="form-control" id="dedicatedLoginEmail" required value="paula.morales@correo.com">
+          </div>
+          <div class="form-group" style="margin-bottom: 24px;">
+            <label class="form-label">Contraseña *</label>
+            <input type="password" class="form-control" id="dedicatedLoginPass" required value="••••••••••••">
+          </div>
+          <button type="submit" class="btn-checkout-primary" style="width: 100%;">
+            Iniciar sesión
+          </button>
+        </form>
+
+        <p style="text-align:center; font-size:13px; margin-top:20px;">
+          ¿No tienes una cuenta?
+          <a href="javascript:void(0)" onclick="navigateTo('register')" style="color:var(--color-primary); font-weight:600; text-decoration:none;">
+            Regístrate aquí
+          </a>
+        </p>
+        <p style="text-align:center; font-size:13px; margin-top:10px;">
+          <a href="javascript:void(0)" onclick="navigateTo('catalog')" style="color:var(--color-text-muted); text-decoration:none;">
+            Volver al catálogo
+          </a>
+        </p>
       </div>
     </section>
 
@@ -284,7 +322,7 @@
           </button>
         </form>
         <p style="text-align:center; font-size:13px; margin-top:16px;">
-          <a href="javascript:void(0)" onclick="navigateTo('guestChoice')" style="color:var(--color-primary); font-weight:600; text-decoration:none;">
+          <a href="javascript:void(0)" onclick="navigateTo('login')" style="color:var(--color-primary); font-weight:600; text-decoration:none;">
             ¿Ya tienes una cuenta? Inicia sesión
           </a>
         </p>
@@ -323,8 +361,8 @@
               <input type="radio" name="deliveryMethod" id="radioEnvio" value="envio" checked>
               <div class="radio-option-content">
                 <div class="radio-option-title">
-                  <span>Envío a Domicilio a Todo el País (+ $5.00)</span>
-                  <span style="font-weight:700;">+ $5.00 USD</span>
+                  <span>Envío a Domicilio a Todo el País <span class="surcharge-tag">(+ $5.00)</span></span>
+                  <span class="surcharge-tag">+ $5.00 USD</span>
                 </div>
                 <p class="radio-option-desc">Entrega puerta a puerta por mensajería nacional en 3 a 5 días hábiles.</p>
               </div>
@@ -458,7 +496,7 @@
 
           <div class="summary-row">
             <span id="checkoutShippingLabel">Recargo por Envío a domicilio:</span>
-            <span id="checkoutShippingCost" style="font-weight: 700; color: var(--color-primary);">+ $5.00 USD</span>
+            <span id="checkoutShippingCost" class="surcharge-tag">+ $5.00 USD</span>
           </div>
 
           <div class="summary-row total">
@@ -596,6 +634,7 @@
         rating: 4.7,
         reviews: 82,
         specs: "Bordado floral en punto francés",
+        desc: "Tote bag de diseño Girasol en color beige natural, bordado artesanal en punto relieve y nudo francés. Capacidad para cargar hasta 10 kg.",
         imgFile: "Tote de girasol.jpg",
         isFeatured: true
       },
@@ -608,6 +647,7 @@
         rating: 4.9,
         reviews: 52,
         specs: "Bordado en relieve sobre algodón crudo",
+        desc: "Tote bag de diseño Mi vecino Totoro en color beige natural, bordado artesanal en relieve sobre algodón crudo con capacidad para cargar hasta 10 kg.",
         imgFile: "Tote de Mi vecino Totoro.jpeg",
         isFeatured: true
       },
@@ -620,6 +660,7 @@
         rating: 4.9,
         reviews: 118,
         specs: "Bordado artesanal contorneado en rojo y negro",
+        desc: "Tote bag de diseño Perrito al estilo Snoopy en color beige natural, bordado artesanal contorneado en rojo y negro con capacidad para cargar hasta 10 kg.",
         imgFile: "Tote de perrito al estilo Snoopy.jpeg",
         isFeatured: true
       },
@@ -632,6 +673,7 @@
         rating: 4.8,
         reviews: 64,
         specs: "Bordado botánico multicolor en relieve",
+        desc: "Tote bag de diseño Arreglo floral en color beige natural, bordado botánico multicolor en relieve con capacidad para cargar hasta 10 kg.",
         imgFile: "Tote con arreglo floral.jpeg",
         isFeatured: false
       },
@@ -644,6 +686,7 @@
         rating: 4.7,
         reviews: 54,
         specs: "Bordado satín en degradado de verdes y turquesas",
+        desc: "Tote bag de diseño Colibrí en color beige natural, bordado artesanal botánico en degradado de verdes y turquesas. Capacidad para cargar hasta 10 kg.",
         imgFile: "Tote de colibrí.jpeg",
         isFeatured: false
       },
@@ -656,6 +699,7 @@
         rating: 4.8,
         reviews: 45,
         specs: "Bordado sutil en tonalidades rosa empolvado",
+        desc: "Tote bag de diseño Flores de cerezo en color beige natural, bordado artesanal sutil en tonalidades rosa empolvado. Capacidad para cargar hasta 10 kg.",
         imgFile: "Tote de flores de cerezo.jpeg",
         isFeatured: false
       },
@@ -668,6 +712,7 @@
         rating: 4.6,
         reviews: 38,
         specs: "Puntadas violetas con espigas aromáticas estilizadas",
+        desc: "Tote bag de diseño Ramas de lavanda en color beige natural, bordado artesanal con espigas aromáticas estilizadas. Capacidad para cargar hasta 10 kg.",
         imgFile: "Tote con lavandas.jpeg",
         isFeatured: false
       },
@@ -680,6 +725,7 @@
         rating: 4.8,
         reviews: 72,
         specs: "Bordado de duendecillos Susuwatari con caramelos",
+        desc: "Tote bag de diseño Carboncillos del viaje de Chihiro en color beige natural, bordado artesanal con detalles de caramelos de azúcar. Capacidad para cargar hasta 10 kg.",
         imgFile: "Tote de Carboncillos del viaje de chihiro.jpeg",
         isFeatured: false
       },
@@ -692,6 +738,7 @@
         rating: 4.8,
         reviews: 91,
         specs: "Bordado con corona de hojas de roble otoñales",
+        desc: "Tote bag de diseño Zorro otoñal en color beige natural, bordado artesanal rodeado de hojas de roble y capacidad para cargar hasta 10 kg.",
         imgFile: "Tote de zorro otoñal.jpeg",
         isFeatured: false
       },
@@ -704,6 +751,7 @@
         rating: 5.0,
         reviews: 36,
         specs: "Gatito enroscado con pelo texturizado en hilo",
+        desc: "Tote bag de diseño Gato naranja en color beige natural, bordado artesanal enroscado con pelo texturizado en hilo. Capacidad para cargar hasta 10 kg.",
         imgFile: "Tote de gato naranja.jpg",
         isFeatured: false
       }
@@ -975,7 +1023,7 @@
       const priceElem = document.getElementById('pdpPrice');
       if (priceElem) priceElem.textContent = `$${product.price.toFixed(2)} USD`;
       const descElem = document.getElementById('pdpDesc');
-      if (descElem) descElem.textContent = `Tote bag de diseño ${product.title} en color beige natural, bordado artesanal con detalles de alta calidad y capacidad para cargar hasta 10 kg.`;
+      if (descElem) descElem.textContent = product.desc;
       const qtyElem = document.getElementById('pdpQtyVal');
       if (qtyElem) qtyElem.textContent = currentPdpQty;
 
@@ -1287,11 +1335,14 @@
         if (currentDeliveryMethod === 'envio') {
           shippingLabel.textContent = 'Recargo por Envío a domicilio:';
           shippingDisplay.textContent = '+ $5.00 USD';
-          shippingDisplay.style.color = 'var(--color-primary)';
+          shippingDisplay.className = 'surcharge-tag';
+          shippingDisplay.style.color = '';
         } else {
           shippingLabel.textContent = 'Retiro en Taller:';
           shippingDisplay.textContent = 'GRATIS ($0.00)';
+          shippingDisplay.className = '';
           shippingDisplay.style.color = 'var(--color-primary)';
+          shippingDisplay.style.fontWeight = '700';
         }
       }
 
@@ -1394,6 +1445,11 @@
     function handleRegisterSubmit(e) {
       e.preventDefault();
       proceedToCheckout('usuario');
+    }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      navigateTo('catalog');
     }
 
     /* --------------------------------------------------------------------------
