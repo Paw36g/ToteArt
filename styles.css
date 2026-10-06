@@ -31,6 +31,15 @@
   --danger-bg: #FEECEB;
   --rating: #E5A83B;
   --inactive: #D4CFCA;
+
+  /* Aliases de compatibilidad */
+  --color-primary: var(--primary);
+  --color-brand: var(--brand);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --border-color: var(--border);
+  --border-light: var(--border);
+  --bg-main: var(--canvas);
   
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --radius-sm: 6px;
@@ -246,6 +255,7 @@ body {
 /* ==========================================================================
    CATÁLOGO / HOME
    ========================================================================== */
+.catalog-grid,
 .catalog-layout {
   display: grid;
   grid-template-columns: 220px 1fr;
@@ -1288,7 +1298,8 @@ body {
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */
-@media (max-width: 960px) {
+@media (max-width: 768px) {
+  .catalog-grid,
   .catalog-layout,
   .cart-layout,
   .checkout-layout,

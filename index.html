@@ -55,7 +55,7 @@
 
     <!-- 1. VISTA CATÁLOGO / HOME -->
     <section id="view-catalog" class="app-view active">
-      <div class="catalog-grid">
+      <div class="catalog-grid catalog-layout">
         <!-- Sidebar de Categorías -->
         <aside class="sidebar-box">
           <h3 class="sidebar-title">CATEGORÍAS</h3>
@@ -210,7 +210,7 @@
             <label for="guestPromoCheck" style="font-size: 13px; color: var(--color-text-muted);">Quiero recibir ofertas y novedades exclusivas de bordados.</label>
           </div>
           <button class="btn-checkout-primary" onclick="proceedToCheckout('invitado')">
-            Continuar a datos de envío →
+            Continuar a datos de envío
           </button>
         </div>
 
@@ -457,7 +457,7 @@
           </div>
 
           <button class="btn-checkout-primary" id="btnConfirmOrder" onclick="executeOrderConfirmation()">
-            Confirmar Pedido →
+            Confirmar Pedido
           </button>
         </aside>
       </div>
@@ -850,25 +850,29 @@
       const descElem = document.getElementById('catalogSectionDesc');
 
       // Render Destacados
-      const featuredProducts = PRODUCTS.filter(p => p.isFeatured);
-      featuredGrid.innerHTML = featuredProducts.map(p => createProductCardHtml(p)).join('');
+      if (featuredGrid) {
+        const featuredProducts = PRODUCTS.filter(p => p.isFeatured);
+        featuredGrid.innerHTML = featuredProducts.map(p => createProductCardHtml(p)).join('');
+      }
 
       // Render Principal según categoría seleccionada
       let filtered = PRODUCTS;
       if (currentCategory !== 'todos') {
         filtered = PRODUCTS.filter(p => p.category === currentCategory);
-        featuredSection.style.display = 'none';
+        if (featuredSection) featuredSection.style.display = 'none';
         
         const catNames = { flores: 'Flores', animales: 'Animales', personajes: 'Personajes Animados' };
-        titleElem.textContent = `Colección ${catNames[currentCategory] || ''}`;
-        descElem.textContent = `Explora nuestra selección especial de bolsos bordados a mano.`;
+        if (titleElem) titleElem.textContent = `Colección ${catNames[currentCategory] || ''}`;
+        if (descElem) descElem.textContent = `Explora nuestra selección especial de bolsos bordados a mano.`;
       } else {
-        featuredSection.style.display = 'block';
-        titleElem.textContent = 'Catálogo Completo';
-        descElem.textContent = 'Bordados sobre lienzo 100% algodón crudo con capacidad de carga hasta 10 kg.';
+        if (featuredSection) featuredSection.style.display = 'block';
+        if (titleElem) titleElem.textContent = 'Catálogo Completo';
+        if (descElem) descElem.textContent = 'Bordados sobre lienzo 100% algodón crudo con capacidad de carga hasta 10 kg.';
       }
 
-      mainCatalogGrid.innerHTML = filtered.map(p => createProductCardHtml(p)).join('');
+      if (mainCatalogGrid) {
+        mainCatalogGrid.innerHTML = filtered.map(p => createProductCardHtml(p)).join('');
+      }
     }
 
     function createProductCardHtml(product) {
@@ -894,7 +898,7 @@
     function filterCategory(cat, btn) {
       currentCategory = cat;
       document.querySelectorAll('.category-item').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      if (btn) btn.classList.add('active');
       renderCatalog();
     }
 
@@ -902,15 +906,17 @@
       const q = query.toLowerCase().trim();
       const mainCatalogGrid = document.getElementById('mainCatalogGrid');
       const featuredSection = document.getElementById('featuredSection');
+      const titleElem = document.getElementById('catalogSectionTitle');
+      const descElem = document.getElementById('catalogSectionDesc');
 
       if (!q) {
         renderCatalog();
         return;
       }
 
-      featuredSection.style.display = 'none';
-      document.getElementById('catalogSectionTitle').textContent = `Resultados para "${query}"`;
-      document.getElementById('catalogSectionDesc').textContent = `Buscando en todos los modelos disponibles.`;
+      if (featuredSection) featuredSection.style.display = 'none';
+      if (titleElem) titleElem.textContent = `Resultados para "${query}"`;
+      if (descElem) descElem.textContent = `Buscando en todos los modelos disponibles.`;
 
       const results = PRODUCTS.filter(p => 
         p.title.toLowerCase().includes(q) || 
@@ -918,10 +924,12 @@
         p.categoryLabel.toLowerCase().includes(q)
       );
 
-      if (results.length === 0) {
-        mainCatalogGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 40px; text-align:center; color: var(--color-text-muted);">No se encontraron tote bags que coincidan con la búsqueda.</div>`;
-      } else {
-        mainCatalogGrid.innerHTML = results.map(p => createProductCardHtml(p)).join('');
+      if (mainCatalogGrid) {
+        if (results.length === 0) {
+          mainCatalogGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 40px; text-align:center; color: var(--color-text-muted);">No se encontraron tote bags que coincidan con la búsqueda.</div>`;
+        } else {
+          mainCatalogGrid.innerHTML = results.map(p => createProductCardHtml(p)).join('');
+        }
       }
     }
 
@@ -933,27 +941,40 @@
       currentPdpProduct = product;
       currentPdpQty = 1;
 
-      document.getElementById('pdpImage').src = `img/${product.imgFile}`;
-      document.getElementById('pdpImage').alt = product.title;
-      document.getElementById('pdpCategory').textContent = product.categoryLabel.toUpperCase();
-      document.getElementById('pdpTitle').textContent = product.title;
-      document.getElementById('pdpRatingText').textContent = `${product.rating} (${product.reviews} reseñas verificadas)`;
-      document.getElementById('pdpPrice').textContent = `$${product.price.toFixed(2)} USD`;
-      document.getElementById('pdpDesc').textContent = `Tote bag de diseño ${product.title} en color beige natural, bordado artesanal con detalles de alta calidad y capacidad para cargar hasta 10 kg.`;
-      document.getElementById('pdpQtyVal').textContent = currentPdpQty;
+      const imgElem = document.getElementById('pdpImage');
+      if (imgElem) {
+        imgElem.src = `img/${product.imgFile}`;
+        imgElem.alt = product.title;
+      }
+      const catElem = document.getElementById('pdpCategory');
+      if (catElem) catElem.textContent = product.categoryLabel.toUpperCase();
+      const titleElem = document.getElementById('pdpTitle');
+      if (titleElem) titleElem.textContent = product.title;
+      const ratingElem = document.getElementById('pdpRatingText');
+      if (ratingElem) ratingElem.textContent = `${product.rating} (${product.reviews} reseñas verificadas)`;
+      const priceElem = document.getElementById('pdpPrice');
+      if (priceElem) priceElem.textContent = `$${product.price.toFixed(2)} USD`;
+      const descElem = document.getElementById('pdpDesc');
+      if (descElem) descElem.textContent = `Tote bag de diseño ${product.title} en color beige natural, bordado artesanal con detalles de alta calidad y capacidad para cargar hasta 10 kg.`;
+      const qtyElem = document.getElementById('pdpQtyVal');
+      if (qtyElem) qtyElem.textContent = currentPdpQty;
 
       updatePdpWishlistButtonState();
 
       // Productos recomendados
-      const related = PRODUCTS.filter(p => p.id !== product.id).slice(0, 3);
-      document.getElementById('pdpRelatedGrid').innerHTML = related.map(p => createProductCardHtml(p)).join('');
+      const relatedGrid = document.getElementById('pdpRelatedGrid');
+      if (relatedGrid) {
+        const related = PRODUCTS.filter(p => p.id !== product.id).slice(0, 3);
+        relatedGrid.innerHTML = related.map(p => createProductCardHtml(p)).join('');
+      }
 
       navigateTo('pdp');
     }
 
     function changePdpQty(delta) {
       currentPdpQty = Math.max(1, currentPdpQty + delta);
-      document.getElementById('pdpQtyVal').textContent = currentPdpQty;
+      const qtyElem = document.getElementById('pdpQtyVal');
+      if (qtyElem) qtyElem.textContent = currentPdpQty;
     }
 
     function addCurrentPdpToCart() {
@@ -998,6 +1019,7 @@
 
     function updatePdpWishlistButtonState() {
       const btn = document.getElementById('pdpWishlistToggleBtn');
+      if (!btn) return;
       const inWish = wishlist.some(p => p.id === currentPdpProduct.id);
       btn.textContent = inWish ? "✓ Guardado en mi lista" : "+ Guardar en mi lista";
     }
@@ -1153,7 +1175,7 @@
               <span>$${subtotal.toFixed(2)} USD</span>
             </div>
             <button class="btn-checkout-primary" onclick="navigateTo('guestChoice')">
-              Continuar con la compra →
+              Continuar con la compra
             </button>
           </aside>
         </div>
@@ -1229,41 +1251,51 @@
 
       // Lista de items en el Desglose lateral
       const itemsListContainer = document.getElementById('checkoutItemsList');
-      itemsListContainer.innerHTML = cart.map(item => `
-        <div class="checkout-item-line">
-          <span>${item.product.title} (x${item.quantity})</span>
-          <span>$${(item.product.price * item.quantity).toFixed(2)}</span>
-        </div>
-      `).join('');
+      if (itemsListContainer) {
+        itemsListContainer.innerHTML = cart.map(item => `
+          <div class="checkout-item-line">
+            <span>${item.product.title} (x${item.quantity})</span>
+            <span>$${(item.product.price * item.quantity).toFixed(2)}</span>
+          </div>
+        `).join('');
+      }
 
-      document.getElementById('checkoutSubtotalDisplay').textContent = `$${subtotal.toFixed(2)} USD`;
+      const subtotalDisplay = document.getElementById('checkoutSubtotalDisplay');
+      if (subtotalDisplay) subtotalDisplay.textContent = `$${subtotal.toFixed(2)} USD`;
       
       const shippingLabel = document.getElementById('checkoutShippingLabel');
       const shippingDisplay = document.getElementById('checkoutShippingCost');
-      if (currentDeliveryMethod === 'envio') {
-        shippingLabel.textContent = 'Recargo por Envío a domicilio:';
-        shippingDisplay.textContent = '+ $5.00 USD';
-        shippingDisplay.style.color = 'var(--color-primary)';
-      } else {
-        shippingLabel.textContent = 'Retiro en Taller:';
-        shippingDisplay.textContent = 'GRATIS ($0.00)';
-        shippingDisplay.style.color = 'var(--color-primary)';
+      if (shippingLabel && shippingDisplay) {
+        if (currentDeliveryMethod === 'envio') {
+          shippingLabel.textContent = 'Recargo por Envío a domicilio:';
+          shippingDisplay.textContent = '+ $5.00 USD';
+          shippingDisplay.style.color = 'var(--color-primary)';
+        } else {
+          shippingLabel.textContent = 'Retiro en Taller:';
+          shippingDisplay.textContent = 'GRATIS ($0.00)';
+          shippingDisplay.style.color = 'var(--color-primary)';
+        }
       }
 
-      document.getElementById('checkoutTotalDisplay').textContent = `$${total.toFixed(2)} USD`;
+      const totalDisplay = document.getElementById('checkoutTotalDisplay');
+      if (totalDisplay) totalDisplay.textContent = `$${total.toFixed(2)} USD`;
     }
 
     function selectDeliveryMethod(method) {
       currentDeliveryMethod = method;
 
-      document.getElementById('radioRetiro').checked = (method === 'retiro');
-      document.getElementById('radioEnvio').checked = (method === 'envio');
+      const radioRetiro = document.getElementById('radioRetiro');
+      if (radioRetiro) radioRetiro.checked = (method === 'retiro');
+      const radioEnvio = document.getElementById('radioEnvio');
+      if (radioEnvio) radioEnvio.checked = (method === 'envio');
 
-      document.getElementById('optionRetiroCard').classList.toggle('active', method === 'retiro');
-      document.getElementById('optionEnvioCard').classList.toggle('active', method === 'envio');
+      const cardRetiro = document.getElementById('optionRetiroCard');
+      if (cardRetiro) cardRetiro.classList.toggle('active', method === 'retiro');
+      const cardEnvio = document.getElementById('optionEnvioCard');
+      if (cardEnvio) cardEnvio.classList.toggle('active', method === 'envio');
 
       const shippingForm = document.getElementById('shippingFormBlock');
-      shippingForm.style.display = (method === 'envio') ? 'block' : 'none';
+      if (shippingForm) shippingForm.style.display = (method === 'envio') ? 'block' : 'none';
 
       // Validación para método contrapago
       const contraRadio = document.getElementById('radioContra');
@@ -1271,16 +1303,20 @@
       const contraNotice = document.getElementById('contraEntregaNotice');
 
       if (method === 'envio') {
-        contraRadio.disabled = true;
-        contraCard.style.opacity = '0.55';
-        contraCard.style.cursor = 'not-allowed';
-        contraNotice.textContent = 'No disponible para envíos a domicilio. Exclusivo para retiro en taller.';
+        if (contraRadio) contraRadio.disabled = true;
+        if (contraCard) {
+          contraCard.style.opacity = '0.55';
+          contraCard.style.cursor = 'not-allowed';
+        }
+        if (contraNotice) contraNotice.textContent = 'No disponible para envíos a domicilio. Exclusivo para retiro en taller.';
         selectPaymentMethod('transferencia');
       } else {
-        contraRadio.disabled = false;
-        contraCard.style.opacity = '1';
-        contraCard.style.cursor = 'pointer';
-        contraNotice.textContent = 'Cancela en efectivo o tarjeta directamente al retirar tu pedido en nuestro taller.';
+        if (contraRadio) contraRadio.disabled = false;
+        if (contraCard) {
+          contraCard.style.opacity = '1';
+          contraCard.style.cursor = 'pointer';
+        }
+        if (contraNotice) contraNotice.textContent = 'Cancela en efectivo o tarjeta directamente al retirar tu pedido en nuestro taller.';
       }
 
       renderCheckoutView();
@@ -1291,13 +1327,18 @@
 
       currentPaymentMethod = method;
 
-      document.getElementById('radioTransfer').checked = (method === 'transferencia');
-      document.getElementById('radioContra').checked = (method === 'contrapago');
+      const radioTransfer = document.getElementById('radioTransfer');
+      if (radioTransfer) radioTransfer.checked = (method === 'transferencia');
+      const radioContra = document.getElementById('radioContra');
+      if (radioContra) radioContra.checked = (method === 'contrapago');
 
-      document.getElementById('optionTransferCard').classList.toggle('active', method === 'transferencia');
-      document.getElementById('optionContraEntregaCard').classList.toggle('active', method === 'contrapago');
+      const cardTransfer = document.getElementById('optionTransferCard');
+      if (cardTransfer) cardTransfer.classList.toggle('active', method === 'transferencia');
+      const cardContra = document.getElementById('optionContraEntregaCard');
+      if (cardContra) cardContra.classList.toggle('active', method === 'contrapago');
 
-      document.getElementById('bankDetailsBlock').style.display = (method === 'transferencia') ? 'block' : 'none';
+      const bankBlock = document.getElementById('bankDetailsBlock');
+      if (bankBlock) bankBlock.style.display = (method === 'transferencia') ? 'block' : 'none';
     }
 
     function handleVoucherFileSelected(input) {
@@ -1372,11 +1413,13 @@
        -------------------------------------------------------------------------- */
     function updateCartBadge() {
       const count = cart.reduce((acc, i) => acc + i.quantity, 0);
-      document.getElementById('cartBadgeCount').textContent = count;
+      const el = document.getElementById('cartBadgeCount');
+      if (el) el.textContent = count;
     }
 
     function updateWishlistBadge() {
-      document.getElementById('wishlistCountNav').textContent = wishlist.length;
+      const el = document.getElementById('wishlistCountNav');
+      if (el) el.textContent = wishlist.length;
     }
 
     // Inicialización al cargar la ventana
