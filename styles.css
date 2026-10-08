@@ -1567,3 +1567,51 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ==========================================================================
+   AVISO FLOTANTE CONTEXTUAL (TOOLTIP)
+   ========================================================================== */
+.btn-floating-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background-color: var(--surface); /* #FFFFFF */
+  color: var(--primary); /* #3D644E */
+  border: 1px solid var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.btn-floating-tooltip.show {
+  opacity: 1;
+  transform: translate(-50%, -14px);
+}
+
+/* Flechita inferior del globo */
+.btn-floating-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--primary) transparent transparent transparent;
+}
+
+/* Variante para lista de deseos (marrón) */
+.btn-floating-tooltip.tooltip-wishlist {
+  color: var(--brand); /* #5C3A21 */
+  border-color: var(--brand);
+}
+
+.btn-floating-tooltip.tooltip-wishlist::after {
+  border-color: var(--brand) transparent transparent transparent;
+}

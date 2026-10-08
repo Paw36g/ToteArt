@@ -114,7 +114,7 @@
           <div class="product-price">$22.00 USD</div>
           <div class="product-card-actions">
             <button class="btn-detail" onclick="openPdp('girasol')">Ver detalle</button>
-            <button class="btn-add-cart" onclick="quickAddToCart('girasol')">Añadir al carrito</button>
+            <button class="btn-add-cart" onclick="quickAddToCart('girasol', event)">Añadir al carrito</button>
           </div>
         </div>
 
@@ -131,7 +131,7 @@
           <div class="product-price">$24.00 USD</div>
           <div class="product-card-actions">
             <button class="btn-detail" onclick="openPdp('totoro')">Ver detalle</button>
-            <button class="btn-add-cart" onclick="quickAddToCart('totoro')">Añadir al carrito</button>
+            <button class="btn-add-cart" onclick="quickAddToCart('totoro', event)">Añadir al carrito</button>
           </div>
         </div>
 
@@ -148,7 +148,7 @@
           <div class="product-price">$26.00 USD</div>
           <div class="product-card-actions">
             <button class="btn-detail" onclick="openPdp('snoopy')">Ver detalle</button>
-            <button class="btn-add-cart" onclick="quickAddToCart('snoopy')">Añadir al carrito</button>
+            <button class="btn-add-cart" onclick="quickAddToCart('snoopy', event)">Añadir al carrito</button>
           </div>
         </div>
 
@@ -165,7 +165,7 @@
           <div class="product-price">$23.50 USD</div>
           <div class="product-card-actions">
             <button class="btn-detail" onclick="openPdp('arreglo-floral')">Ver detalle</button>
-            <button class="btn-add-cart" onclick="quickAddToCart('arreglo-floral')">Añadir al carrito</button>
+            <button class="btn-add-cart" onclick="quickAddToCart('arreglo-floral', event)">Añadir al carrito</button>
           </div>
         </div>
       </div>
@@ -304,7 +304,7 @@
           </div>
 
           <div class="pdp-actions">
-            <button class="btn-pdp-primary" onclick="addCurrentPdpToCart()">Añadir al carrito</button>
+            <button class="btn-pdp-primary" onclick="addCurrentPdpToCart(event)">Añadir al carrito</button>
             <button class="btn-pdp-buy" onclick="buyCurrentPdpNow()">Comprar ahora</button>
             <button class="btn-pdp-wishlist" id="pdpWishlistToggleBtn" onclick="toggleCurrentPdpWishlist()">+ Guardar en mi lista</button>
           </div>
@@ -1061,7 +1061,7 @@
           <div class="product-price">$${product.price.toFixed(2)} USD</div>
           <div class="product-card-actions">
             <button class="btn-detail" onclick="openPdp('${product.id}')">Ver detalle</button>
-            <button class="btn-add-cart" onclick="quickAddToCart('${product.id}')">Añadir al carrito</button>
+            <button class="btn-add-cart" onclick="quickAddToCart('${product.id}', event)">Añadir al carrito</button>
           </div>
         </div>
       `;
@@ -1179,7 +1179,38 @@
       if (qtyElem) qtyElem.textContent = currentPdpQty;
     }
 
-    function addCurrentPdpToCart() {
+    /* --------------------------------------------------------------------------
+       NOTIFICACIONES FLOTANTES CONTEXTUALES (TOOLTIP)
+       -------------------------------------------------------------------------- */
+    function showButtonNotification(buttonElement, message, type = 'cart') {
+      if (!buttonElement) return;
+
+      // Remover cualquier tooltip previo que siga abierto
+      document.querySelectorAll('.btn-floating-tooltip').forEach(el => el.remove());
+
+      const rect = buttonElement.getBoundingClientRect();
+      const tooltip = document.createElement('div');
+      tooltip.className = `btn-floating-tooltip ${type === 'wishlist' ? 'tooltip-wishlist' : ''}`;
+      tooltip.textContent = message;
+
+      // Posicionar exactamente centrado sobre el botón
+      tooltip.style.left = `${rect.left + (rect.width / 2)}px`;
+      tooltip.style.top = `${rect.top}px`;
+
+      document.body.appendChild(tooltip);
+
+      requestAnimationFrame(() => {
+        tooltip.classList.add('show');
+      });
+
+      // Desvanecer y retirar tras 1.8 segundos
+      setTimeout(() => {
+        tooltip.classList.remove('show');
+        setTimeout(() => tooltip.remove(), 200);
+      }, 1800);
+    }
+
+    function addCurrentPdpToCart(event) {
       const existing = cart.find(item => item.product.id === currentPdpProduct.id);
       if (existing) {
         existing.quantity += currentPdpQty;
@@ -1200,6 +1231,9 @@
           renderWishlistView();
         }
       }
+
+      const btn = document.querySelector('.btn-pdp-primary');
+      showButtonNotification(btn, "✓ Añadido al carrito", 'cart');
     }
 
     function buyCurrentPdpNow() {
@@ -1207,7 +1241,7 @@
       navigateTo('cart');
     }
 
-    function quickAddToCart(productId) {
+    function quickAddToCart(productId, event) {
       const product = PRODUCTS.find(p => p.id === productId);
       if (!product) return;
       const existing = cart.find(item => item.product.id === product.id);
@@ -1228,6 +1262,9 @@
           renderWishlistView();
         }
       }
+
+      const btn = event ? event.currentTarget : null;
+      showButtonNotification(btn, "✓ Añadido al carrito", 'cart');
     }
 
     function toggleCurrentPdpWishlist() {
@@ -1239,6 +1276,11 @@
       }
       updateWishlistBadge();
       updatePdpWishlistButtonState();
+
+      const btn = document.getElementById('pdpWishlistToggleBtn');
+      const inWish = wishlist.some(p => p.id === currentPdpProduct.id);
+      const msg = inWish ? "♥ Guardado en mi lista" : "Eliminado de mi lista";
+      showButtonNotification(btn, msg, 'wishlist');
     }
 
     function updatePdpWishlistButtonState() {
@@ -1287,7 +1329,7 @@
               </div>
               <div class="product-price">$${product.price.toFixed(2)} USD</div>
               <div class="product-card-actions">
-                <button class="btn-add-cart" onclick="quickAddToCart('${product.id}')">Añadir al carrito</button>
+                <button class="btn-add-cart" onclick="quickAddToCart('${product.id}', event)">Añadir al carrito</button>
                 <button class="btn-remove-square" title="Eliminar de mi lista" onclick="promptRemoveItem('wishlist', '${product.id}')">
                   <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"></polyline>
