@@ -13,7 +13,7 @@
        ========================================================================= -->
   <header class="header-wrapper">
     <div class="header-container">
-      <div class="brand-logo" onclick="navigateTo('catalog')">
+      <div class="brand-logo" onclick="navigateTo('home')">
         <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="ToteArt">
         <span>ToteArt</span>
       </div>
@@ -23,17 +23,7 @@
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" id="searchInput" placeholder="Buscar totebag bordado..." oninput="handleSearch(this.value)" onfocus="showSearchDropdown()">
-        <div id="searchDropdown" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); box-shadow:0 8px 20px rgba(0,0,0,0.08); z-index:100; overflow:hidden;">
-          <div class="search-dropdown-item" onclick="selectSearchSuggestion('Tote de girasol')" style="padding: 10px 14px; font-size: 13px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.15s;" onmouseover="this.style.background='var(--menu-active)'" onmouseout="this.style.background='transparent'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <span>Tote de girasol</span>
-          </div>
-          <div class="search-dropdown-item" onclick="selectSearchSuggestion('Tote de Mi vecino Totoro')" style="padding: 10px 14px; font-size: 13px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.15s; border-top: 1px solid var(--border);" onmouseover="this.style.background='var(--menu-active)'" onmouseout="this.style.background='transparent'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <span>Tote de Mi vecino Totoro</span>
-          </div>
-        </div>
+        <input type="text" id="searchInput" placeholder="Buscar totebag bordado..." oninput="handleSearch(this.value)">
       </div>
 
       <nav class="header-nav">
@@ -63,8 +53,166 @@
        ========================================================================= -->
   <main class="main-wrapper">
 
-    <!-- 1. VISTA CATÁLOGO / HOME -->
-    <section id="view-catalog" class="app-view active">
+    <!-- 0. VISTA HOME (PORTADA PRINCIPAL) -->
+    <section id="view-home" class="app-view active">
+      <!-- A. HERO BANNER -->
+      <div class="home-hero-container">
+        <img src="img/header home.jpeg" alt="Detalles que llevas contigo" class="home-hero-banner" onerror="handleImageFallback(this)">
+      </div>
+
+      <!-- B. SECCIÓN EXPLORA POR CATEGORÍA -->
+      <div class="home-section-header">
+        <h2 class="home-section-title">Explora por categoría</h2>
+        <a href="javascript:void(0)" class="home-section-link" onclick="openCategoryFromHome('todos')">Ver todas →</a>
+      </div>
+      <div class="home-categories-grid">
+        <div class="category-home-card" onclick="openCategoryFromHome('flores')">
+          <div class="category-avatar-circle">
+            <img src="img/Tote con arreglo floral.jpeg" alt="Flores" class="category-circle-img" onerror="handleImageFallback(this)">
+          </div>
+          <div class="category-home-info">
+            <div class="category-home-title">Flores</div>
+            <span class="category-home-link">Ver colección →</span>
+          </div>
+        </div>
+        <div class="category-home-card" onclick="openCategoryFromHome('animales')">
+          <div class="category-avatar-circle">
+            <img src="img/Tote de zorro otoñal.jpeg" alt="Animales" class="category-circle-img" onerror="handleImageFallback(this)">
+          </div>
+          <div class="category-home-info">
+            <div class="category-home-title">Animales</div>
+            <span class="category-home-link">Ver colección →</span>
+          </div>
+        </div>
+        <div class="category-home-card" onclick="openCategoryFromHome('personajes')">
+          <div class="category-avatar-circle">
+            <img src="img/Tote de Mi vecino Totoro.jpeg" alt="Personajes animados" class="category-circle-img" onerror="handleImageFallback(this)">
+          </div>
+          <div class="category-home-info">
+            <div class="category-home-title">Personajes animados</div>
+            <span class="category-home-link">Ver colección →</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- C. SECCIÓN MÁS VENDIDOS -->
+      <div class="home-section-header">
+        <h2 class="home-section-title">Más vendidos</h2>
+        <a href="javascript:void(0)" class="home-section-link" onclick="openCategoryFromHome('todos')">Ver todos →</a>
+      </div>
+      <div class="home-bestsellers-grid">
+        <!-- 1. Tote de girasol ($22.00) -->
+        <div class="product-card">
+          <div class="product-img-box" onclick="openPdp('girasol')" style="cursor:pointer">
+            <img src="img/Tote de girasol.jpg" alt="Tote de girasol" onerror="handleImageFallback(this)">
+          </div>
+          <h4 class="product-info-title">Tote de girasol</h4>
+          <div class="product-rating">
+            <span class="star">★</span>
+            <span>4.7 (82 reseñas)</span>
+          </div>
+          <div class="product-price">$22.00 USD</div>
+          <div class="product-card-actions">
+            <button class="btn-detail" onclick="openPdp('girasol')">Ver detalle</button>
+            <button class="btn-add-cart" onclick="quickAddToCart('girasol')">Añadir al carrito</button>
+          </div>
+        </div>
+
+        <!-- 2. Tote de Mi vecino Totoro ($24.00) -->
+        <div class="product-card">
+          <div class="product-img-box" onclick="openPdp('totoro')" style="cursor:pointer">
+            <img src="img/Tote de Mi vecino Totoro.jpeg" alt="Tote de Mi vecino Totoro" onerror="handleImageFallback(this)">
+          </div>
+          <h4 class="product-info-title">Tote de Mi vecino Totoro</h4>
+          <div class="product-rating">
+            <span class="star">★</span>
+            <span>4.9 (52 reseñas)</span>
+          </div>
+          <div class="product-price">$24.00 USD</div>
+          <div class="product-card-actions">
+            <button class="btn-detail" onclick="openPdp('totoro')">Ver detalle</button>
+            <button class="btn-add-cart" onclick="quickAddToCart('totoro')">Añadir al carrito</button>
+          </div>
+        </div>
+
+        <!-- 3. Tote de perrito al estilo Snoopy ($26.00) -->
+        <div class="product-card">
+          <div class="product-img-box" onclick="openPdp('snoopy')" style="cursor:pointer">
+            <img src="img/Tote de perrito al estilo Snoopy.jpeg" alt="Tote de perrito al estilo Snoopy" onerror="handleImageFallback(this)">
+          </div>
+          <h4 class="product-info-title">Tote de perrito al estilo Snoopy</h4>
+          <div class="product-rating">
+            <span class="star">★</span>
+            <span>4.9 (118 reseñas)</span>
+          </div>
+          <div class="product-price">$26.00 USD</div>
+          <div class="product-card-actions">
+            <button class="btn-detail" onclick="openPdp('snoopy')">Ver detalle</button>
+            <button class="btn-add-cart" onclick="quickAddToCart('snoopy')">Añadir al carrito</button>
+          </div>
+        </div>
+
+        <!-- 4. Tote con arreglo floral ($23.50) -->
+        <div class="product-card">
+          <div class="product-img-box" onclick="openPdp('arreglo-floral')" style="cursor:pointer">
+            <img src="img/Tote con arreglo floral.jpeg" alt="Tote con arreglo floral" onerror="handleImageFallback(this)">
+          </div>
+          <h4 class="product-info-title">Tote con arreglo floral</h4>
+          <div class="product-rating">
+            <span class="star">★</span>
+            <span>4.8 (64 reseñas)</span>
+          </div>
+          <div class="product-price">$23.50 USD</div>
+          <div class="product-card-actions">
+            <button class="btn-detail" onclick="openPdp('arreglo-floral')">Ver detalle</button>
+            <button class="btn-add-cart" onclick="quickAddToCart('arreglo-floral')">Añadir al carrito</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- D. SECCIÓN DESCUBRE NUESTRA COLECCIÓN -->
+      <div class="home-section-header">
+        <h2 class="home-section-title">Descubre nuestra colección</h2>
+      </div>
+      <div class="home-collection-grid">
+        <div class="collection-mini-card" onclick="openPdp('totoro')">
+          <img src="img/Tote de Mi vecino Totoro.jpeg" alt="Totoro" class="collection-mini-img" onerror="handleImageFallback(this)">
+          <div class="collection-mini-title">Totoro</div>
+          <div class="collection-mini-price">$24.00 USD</div>
+        </div>
+        <div class="collection-mini-card" onclick="openPdp('snoopy')">
+          <img src="img/Tote de perrito al estilo Snoopy.jpeg" alt="Snoopy" class="collection-mini-img" onerror="handleImageFallback(this)">
+          <div class="collection-mini-title">Snoopy</div>
+          <div class="collection-mini-price">$26.00 USD</div>
+        </div>
+        <div class="collection-mini-card" onclick="openPdp('arreglo-floral')">
+          <img src="img/Tote con arreglo floral.jpeg" alt="Arreglo floral" class="collection-mini-img" onerror="handleImageFallback(this)">
+          <div class="collection-mini-title">Arreglo floral</div>
+          <div class="collection-mini-price">$23.50 USD</div>
+        </div>
+        <div class="collection-mini-card" onclick="openPdp('lavandas')">
+          <img src="img/Tote con lavandas.jpeg" alt="Lavandas" class="collection-mini-img" onerror="handleImageFallback(this)">
+          <div class="collection-mini-title">Lavandas</div>
+          <div class="collection-mini-price">$22.00 USD</div>
+        </div>
+        <div class="collection-mini-card" onclick="openPdp('zorro')">
+          <img src="img/Tote de zorro otoñal.jpeg" alt="Zorro otoñal" class="collection-mini-img" onerror="handleImageFallback(this)">
+          <div class="collection-mini-title">Zorro otoñal</div>
+          <div class="collection-mini-price">$25.00 USD</div>
+        </div>
+        <div class="collection-mini-card" onclick="openPdp('chihiro')">
+          <img src="img/Tote de Carboncillos del viaje de chihiro.jpeg" alt="Chihiro" class="collection-mini-img" onerror="handleImageFallback(this)">
+          <div class="collection-mini-title">Chihiro</div>
+          <div class="collection-mini-price">$24.00 USD</div>
+        </div>
+      </div>
+
+      <!-- E. FRANJA ARTESANAL -->
+      <img src="img/footer home.jpeg" alt="Diseños bordados a mano" class="home-craft-banner" onerror="handleImageFallback(this)">
+    </section>
+
+    <!-- 1. VISTA CATÁLOGO -->
+    <section id="view-catalog" class="app-view">
       <div class="catalog-grid catalog-layout">
         <!-- Sidebar de Categorías -->
         <aside class="sidebar-box">
@@ -761,7 +909,7 @@
        MANEJADOR DE CARGA ROBUSTA DE IMÁGENES LOCALES Y FALLBACK
        -------------------------------------------------------------------------- */
     function handleImgFallback(imgElement) {
-      const currentSrc = imgElement.getAttribute('src');
+      const currentSrc = imgElement.getAttribute('src') || '';
       
       // Si falló el logo
       if (imgElement.getAttribute('data-img-type') === 'logo') {
@@ -771,6 +919,26 @@
         }
         imgElement.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%232D5A43"/><text x="50%" y="60%" font-size="20" font-family="sans-serif" font-weight="bold" fill="white" text-anchor="middle">T</text></svg>';
         return;
+      }
+
+      // Soporte para header home y footer home
+      if (currentSrc.includes('header home')) {
+        if (currentSrc.endsWith('.jpeg')) {
+          imgElement.src = 'img/header home.jpg';
+          return;
+        } else if (currentSrc.endsWith('.jpg')) {
+          imgElement.src = 'img/header home.jpeg';
+          return;
+        }
+      }
+      if (currentSrc.includes('footer home')) {
+        if (currentSrc.endsWith('.jpeg')) {
+          imgElement.src = 'img/footer home.jpg';
+          return;
+        } else if (currentSrc.endsWith('.jpg')) {
+          imgElement.src = 'img/footer home.jpeg';
+          return;
+        }
       }
 
       // Probar variaciones comunes (.jpg <-> .jpeg, nombres cortos)
@@ -785,6 +953,10 @@
       // Respaldo elegante si no existe la imagen en el disco
       const title = imgElement.alt || "Tote Bag";
       imgElement.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="300" height="300" fill="%23F6F3EE"/><rect x="85" y="90" width="130" height="150" rx="10" fill="%23EBE4D8" stroke="%23D5CEC3" stroke-width="3"/><path d="M115,90 C115,40 185,40 185,90" fill="none" stroke="%23C4B8A6" stroke-width="4"/><circle cx="150" cy="165" r="30" fill="%232D5A43" opacity="0.15"/><text x="50%" y="82%" font-family="sans-serif" font-size="12" font-weight="600" fill="%237A7067" text-anchor="middle">${encodeURIComponent(title)}</text></svg>`;
+    }
+
+    function handleImageFallback(imgElement) {
+      handleImgFallback(imgElement);
     }
 
     /* --------------------------------------------------------------------------
@@ -834,10 +1006,9 @@
       if (viewId === 'tracking') renderTrackingView();
     }
 
-    // Escuchar flechas de navegación del navegador (Atrás / Adelante)
-    window.addEventListener('popstate', (event) => {
-      const viewId = (event.state && event.state.view) || (location.hash ? location.hash.replace('#', '') : 'catalog');
-      navigateTo(viewId, false);
+    // Escuchar flechas de navegación del navegador (Atrás / Adelante): forzar retorno a Home
+    window.addEventListener('popstate', () => {
+      navigateTo('home', false);
     });
 
     /* --------------------------------------------------------------------------
@@ -903,29 +1074,14 @@
       renderCatalog();
     }
 
-    function showSearchDropdown() {
-      const dd = document.getElementById('searchDropdown');
-      if (dd) dd.style.display = 'block';
+    function openCategoryFromHome(catId) {
+      currentCategory = catId;
+      document.querySelectorAll('.category-item').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-cat') === catId);
+      });
+      renderCatalog();
+      navigateTo('catalog');
     }
-
-    function hideSearchDropdown() {
-      const dd = document.getElementById('searchDropdown');
-      if (dd) dd.style.display = 'none';
-    }
-
-    function selectSearchSuggestion(val) {
-      const input = document.getElementById('searchInput');
-      if (input) input.value = val;
-      hideSearchDropdown();
-      handleSearch(val);
-    }
-
-    document.addEventListener('click', (e) => {
-      const searchBox = document.querySelector('.header-search');
-      if (searchBox && !searchBox.contains(e.target)) {
-        hideSearchDropdown();
-      }
-    });
 
     function handleSearch(query) {
       const q = query.toLowerCase().trim();
@@ -934,70 +1090,48 @@
       const titleElem = document.getElementById('catalogSectionTitle');
       const descElem = document.getElementById('catalogSectionDesc');
 
-      // Asegurar vista de catálogo activa si se busca desde otra pantalla
+      // Si el usuario busca desde el Home u otra pantalla, redirigir a 'catalog'
       const catalogView = document.getElementById('view-catalog');
       if (catalogView && !catalogView.classList.contains('active')) {
         navigateTo('catalog');
       }
 
-      // Si el campo está vacío, restaurar el catálogo normal
+      // Si el input está vacío, restaurar el catálogo normal
       if (!q) {
         if (featuredSection) featuredSection.style.display = (currentCategory === 'todos') ? 'block' : 'none';
         renderCatalog();
         return;
       }
 
-      // 1. "girasol": Muestra únicamente el Tote de girasol
-      if (q === 'girasol' || q === 'tote de girasol') {
-        if (featuredSection) featuredSection.style.display = 'none';
-        if (titleElem) titleElem.textContent = 'Resultados para "girasol"';
-        if (descElem) descElem.textContent = 'Mostrando 1 producto';
-        const results = PRODUCTS.filter(p => p.id === 'girasol');
-        if (mainCatalogGrid) {
-          mainCatalogGrid.innerHTML = results.map(p => createProductCardHtml(p)).join('');
-        }
-        return;
-      }
+      // Búsqueda dinámica real sobre el array PRODUCTS
+      const results = PRODUCTS.filter(product =>
+        product.title.toLowerCase().includes(q) ||
+        product.categoryLabel.toLowerCase().includes(q) ||
+        (product.specs && product.specs.toLowerCase().includes(q))
+      );
 
-      // 2. "totoro": Muestra únicamente el Tote de Mi vecino Totoro
-      if (q === 'totoro' || q === 'tote de mi vecino totoro') {
-        if (featuredSection) featuredSection.style.display = 'none';
-        if (titleElem) titleElem.textContent = 'Resultados para "totoro"';
-        if (descElem) descElem.textContent = 'Mostrando 1 producto';
-        const results = PRODUCTS.filter(p => p.id === 'totoro');
-        if (mainCatalogGrid) {
-          mainCatalogGrid.innerHTML = results.map(p => createProductCardHtml(p)).join('');
-        }
-        return;
-      }
-
-      // 3. "flores": Muestra la colección de flores (girasol, arreglo floral, cerezo, lavandas)
-      if (q === 'flores') {
-        if (featuredSection) featuredSection.style.display = 'none';
-        if (titleElem) titleElem.textContent = 'Resultados para "flores"';
-        if (descElem) descElem.textContent = 'Colección de flores bordadas a mano';
-        const results = PRODUCTS.filter(p => p.category === 'flores');
-        if (mainCatalogGrid) {
-          mainCatalogGrid.innerHTML = results.map(p => createProductCardHtml(p)).join('');
-        }
-        return;
-      }
-
-      // Si escribe cualquier otro término, mostrar mensaje de sin resultados y sugerencia
       if (featuredSection) featuredSection.style.display = 'none';
       if (titleElem) titleElem.textContent = `Resultados para "${query}"`;
-      if (descElem) descElem.textContent = 'Sin resultados';
-      if (mainCatalogGrid) {
-        mainCatalogGrid.innerHTML = `
-          <div style="grid-column: 1/-1; padding: 48px 20px; text-align: center; color: var(--color-text-muted);">
-            <p style="font-size: 16px; font-weight: 700; color: var(--color-text-main); margin-bottom: 8px;">
-              No se encontraron resultados para "${query}".
-            </p>
-            <p style="font-size: 14px;">
-              Solo puedes buscar: <strong>girasol</strong>, <strong>totoro</strong> o <strong>flores</strong>.
-            </p>
-          </div>
-        `;
+
+      if (results.length > 0) {
+        if (descElem) descElem.textContent = `Mostrando ${results.length} producto${results.length === 1 ? '' : 's'}`;
+        if (mainCatalogGrid) {
+          mainCatalogGrid.innerHTML = results.map(p => createProductCardHtml(p)).join('');
+        }
+      } else {
+        if (descElem) descElem.textContent = 'Sin resultados';
+        if (mainCatalogGrid) {
+          mainCatalogGrid.innerHTML = `
+            <div style="grid-column: 1/-1; padding: 48px 20px; text-align: center; color: var(--color-text-muted);">
+              <p style="font-size: 16px; font-weight: 700; color: var(--color-text-main); margin-bottom: 8px;">
+                No se encontraron productos para "${query}".
+              </p>
+              <p style="font-size: 14px;">
+                Intenta buscar por otro nombre, categoría o tipo de bordado.
+              </p>
+            </div>
+          `;
+        }
       }
     }
 
@@ -1053,6 +1187,19 @@
         cart.push({ product: currentPdpProduct, quantity: currentPdpQty });
       }
       updateCartBadge();
+
+      // Si el producto estaba en la lista de deseos, eliminarlo automáticamente
+      const productId = currentPdpProduct.id;
+      const wishIndex = wishlist.findIndex(item => item.id === productId);
+      if (wishIndex !== -1) {
+        wishlist.splice(wishIndex, 1);
+        updateWishlistBadge();
+        updatePdpWishlistButtonState();
+        const wishlistView = document.getElementById('view-wishlist');
+        if (wishlistView && wishlistView.classList.contains('active')) {
+          renderWishlistView();
+        }
+      }
     }
 
     function buyCurrentPdpNow() {
@@ -1070,6 +1217,17 @@
         cart.push({ product, quantity: 1 });
       }
       updateCartBadge();
+
+      // Si el producto estaba en la lista de deseos, eliminarlo automáticamente
+      const wishIndex = wishlist.findIndex(item => item.id === productId);
+      if (wishIndex !== -1) {
+        wishlist.splice(wishIndex, 1);
+        updateWishlistBadge();
+        const wishlistView = document.getElementById('view-wishlist');
+        if (wishlistView && wishlistView.classList.contains('active')) {
+          renderWishlistView();
+        }
+      }
     }
 
     function toggleCurrentPdpWishlist() {
@@ -1181,10 +1339,10 @@
               <thead>
                 <tr>
                   <th>PRODUCTO</th>
-                  <th>PRECIO</th>
-                  <th>CANTIDAD</th>
-                  <th>SUBTOTAL</th>
-                  <th class="col-empty"></th>
+                  <th class="col-price">PRECIO</th>
+                  <th class="col-qty">CANTIDAD</th>
+                  <th class="col-subtotal">SUBTOTAL</th>
+                  <th class="col-action"></th>
                 </tr>
               </thead>
               <tbody>
@@ -1588,7 +1746,7 @@
 
     // Inicialización al cargar la ventana
     window.addEventListener('DOMContentLoaded', () => {
-      const initialView = location.hash ? location.hash.replace('#', '') : 'catalog';
+      const initialView = location.hash ? location.hash.replace('#', '') : 'home';
       history.replaceState({ view: initialView }, '', '#' + initialView);
       navigateTo(initialView, false);
       renderCatalog();

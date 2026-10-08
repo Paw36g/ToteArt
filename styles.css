@@ -692,7 +692,8 @@ body {
 
 .cart-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .cart-table th {
@@ -702,22 +703,43 @@ body {
   letter-spacing: 0.6px;
   color: var(--text-main);
   text-transform: uppercase;
-  padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
 }
 
-.cart-table th.col-empty {
-  width: 110px;
+.cart-table th, .cart-table td {
+  padding: 16px 14px;
+  vertical-align: middle;
 }
 
 .cart-table td {
-  padding: 16px 0;
   border-bottom: 1px solid var(--border);
-  vertical-align: middle;
 }
 
 .cart-table tr:last-child td {
   border-bottom: none;
+}
+
+.cart-table th.col-price, .cart-table td.cart-price-cell {
+  width: 14%;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cart-table th.col-qty, .cart-table td:nth-child(3) {
+  width: 18%;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cart-table th.col-subtotal, .cart-table td.cart-subtotal-cell {
+  width: 16%;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cart-table th.col-action, .cart-table td:last-child {
+  width: 12%;
+  text-align: right;
 }
 
 .cart-product-cell {
@@ -1304,9 +1326,212 @@ body {
 }
 
 /* ==========================================================================
+   PORTADA HOME (#view-home)
+   ========================================================================== */
+.home-hero-container {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-bottom: 28px;
+  background-color: var(--surface);
+}
+
+.home-hero-banner {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.home-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.home-section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.home-section-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.home-section-link:hover {
+  color: var(--brand-hover);
+  text-decoration: underline;
+}
+
+/* Grilla de categorías */
+.home-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 36px;
+}
+
+.category-home-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.category-home-card:hover {
+  background-color: var(--menu-active);
+  border-color: var(--brand);
+  transform: translateY(-2px);
+}
+
+.category-avatar-circle,
+.category-home-card .category-icon {
+  width: 64px;
+  height: 64px;
+  min-width: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: var(--menu-active); /* #EFECE6 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-circle-img,
+.category-avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.7);
+  transform-origin: center 55%;
+  display: block;
+}
+
+.category-home-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.category-home-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.category-home-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+/* Grilla de más vendidos */
+.home-bestsellers-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 36px;
+}
+
+/* Grilla de colección compacta */
+.home-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 36px;
+}
+
+.collection-mini-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.collection-mini-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-color: var(--brand);
+}
+
+.collection-mini-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  background-color: var(--canvas);
+  display: block;
+}
+
+.collection-mini-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.collection-mini-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Franja artesanal */
+.home-craft-container {
+  width: 100%;
+}
+
+.home-craft-banner {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  border-radius: var(--radius-md);
+  margin-bottom: 28px;
+}
+
+/* ==========================================================================
    RESPONSIVE
    ========================================================================== */
+@media (max-width: 900px) {
+  .home-categories-grid {
+    grid-template-columns: 1fr;
+  }
+  .home-bestsellers-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .home-collection-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
+  .home-craft-banner {
+    height: 80px;
+  }
+
   .catalog-grid,
   .catalog-layout,
   .cart-layout,
@@ -1331,5 +1556,14 @@ body {
   }
   .header-search {
     display: none;
+  }
+}
+
+@media (max-width: 550px) {
+  .home-bestsellers-grid {
+    grid-template-columns: 1fr;
+  }
+  .home-collection-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
