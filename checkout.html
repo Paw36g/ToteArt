@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finalización de Pedido y Pago - ToteArt</title>  
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+       ========================================================================= -->
+  <header class="header-wrapper">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" aria-label="Ir a página de inicio de ToteArt">
+        <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="">
+        <span>ToteArt</span>
+      </a>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar tote bag bordado..." aria-label="Buscar tote bag bordado">
+      </div>
+
+      <nav class="header-nav" aria-label="Navegación principal">
+        <a href="catalogo.html" class="nav-link">Catálogo</a>
+        <a href="pedidos.html" class="nav-link" id="navOrdersBtn">Mis Pedidos</a>
+        <a href="carrito.html" class="cart-btn" title="Ver Carrito de compras" aria-label="Ver carrito de compras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cartBadgeCount" aria-label="Artículos en carrito">0</span>
+        </a>
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="window.location.href='perfil.html'">
+          Mi Cuenta
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL: CHECKOUT
+       ========================================================================= -->
+  <main class="main-wrapper">
+    <a href="carrito.html" class="back-link" style="display:inline-block; text-decoration:none; margin-bottom:16px;">
+      ← Volver al carrito
+    </a>
+
+    <h1 class="page-title">Finalización de Pedido y Pago</h1>
+
+    <div class="checkout-layout">
+      <!-- Columna Izquierda: Métodos de Entrega y Pago -->
+      <div class="checkout-main-content">
+        <!-- 1. Método de Entrega -->
+        <section class="checkout-section-box" aria-labelledby="deliveryHeading">
+          <h2 class="checkout-section-title" id="deliveryHeading">1. SELECCIONA EL MÉTODO DE ENTREGA</h2>
+
+          <!-- Opción Retiro -->
+          <label class="radio-option-card" id="optionRetiroCard" onclick="selectDeliveryMethod('retiro')">
+            <input type="radio" name="deliveryMethod" id="radioRetiro" value="retiro" aria-describedby="descRetiro">
+            <div class="radio-option-content">
+              <div class="radio-option-title">
+                <span>Retiro en Local Físico (Taller ToteArt)</span>
+                <span class="delivery-price-text">GRATIS ($0.00)</span>
+              </div>
+              <p class="radio-option-desc" id="descRetiro">Av. Amazonas N34-120 y Gaspar de Villarroel. Listo en 24h laborables.</p>
+            </div>
+          </label>
+
+          <!-- Opción Envío a Domicilio -->
+          <label class="radio-option-card active" id="optionEnvioCard" onclick="selectDeliveryMethod('envio')">
+            <input type="radio" name="deliveryMethod" id="radioEnvio" value="envio" checked aria-describedby="descEnvio">
+            <div class="radio-option-content">
+              <div class="radio-option-title">
+                <span>Envío a Domicilio a Todo el País</span>
+                <span class="delivery-price-text">+ $5.00 USD</span>
+              </div>
+              <p class="radio-option-desc" id="descEnvio">Entrega puerta a puerta por mensajería nacional en 3 a 5 días hábiles.</p>
+            </div>
+          </label>
+
+          <!-- Formulario de Envío a Domicilio -->
+          <div id="shippingFormBlock">
+            <p style="font-size:13px; font-weight:700; margin-top:14px; margin-bottom:12px; color:var(--text-main);">
+              Datos de Envío a Domicilio (Requeridos):
+            </p>
+            <div class="checkout-address-grid">
+              <div class="form-group">
+                <label class="form-label" for="shippingName">Nombres y apellidos completos *</label>
+                <input type="text" class="form-control" id="shippingName" required value="Paula Morales">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="shippingId">Número de cédula o RUC *</label>
+                <input type="text" class="form-control" id="shippingId" required value="1724568910">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="shippingStreet1">Calle principal *</label>
+                <input type="text" class="form-control" id="shippingStreet1" required value="Av. Amazonas">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="shippingStreet2">Calle secundaria *</label>
+                <input type="text" class="form-control" id="shippingStreet2" required value="Gaspar de Villarroel">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="shippingHouseNo">Número de casa o edificio *</label>
+                <input type="text" class="form-control" id="shippingHouseNo" required value="N34-120 (Edificio Los Olivos, Apto 4B)">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="shippingRef">Referencias de entrega *</label>
+                <input type="text" class="form-control" id="shippingRef" required value="Frente a la parada del metro">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="shippingCity">Ciudad y provincia de destino *</label>
+                <input type="text" class="form-control" id="shippingCity" required value="Quito, Pichincha">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="shippingPhone">Número de teléfono *</label>
+                <input type="tel" class="form-control" id="shippingPhone" required value="0991234567">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. Forma de Pago -->
+        <section class="checkout-section-box" aria-labelledby="paymentHeading">
+          <h2 class="checkout-section-title" id="paymentHeading">2. FORMA DE PAGO</h2>
+
+          <!-- Opción Transferencia Bancaria -->
+          <label class="radio-option-card active" id="optionTransferCard" onclick="selectPaymentMethod('transferencia')">
+            <input type="radio" name="paymentMethod" id="radioTransfer" value="transferencia" checked aria-describedby="descTransfer">
+            <div class="radio-option-content">
+              <div class="radio-option-title">
+                <span>Transferencia Bancaria Directa</span>
+              </div>
+              <p class="radio-option-desc" id="descTransfer">Realiza la transferencia desde tu banca web o móvil y adjunta tu comprobante.</p>
+            </div>
+          </label>
+
+          <!-- Datos Bancarios -->
+          <div id="bankDetailsBlock" class="bank-transfer-details">
+            <div class="bank-header-row">
+              <span>RUC: 1792458901001 — ToteArt Ecuador Cía. Ltda.</span>
+              <span style="font-weight: 500; color: var(--text-muted);">pagos@toteart.ec</span>
+            </div>
+
+            <div class="banks-grid">
+              <div class="bank-subcard">
+                <h3 class="bank-name" style="font-size:14px; margin-bottom:4px;">Banco Pichincha</h3>
+                <div class="bank-meta">Tipo: Cuenta Corriente</div>
+                <div class="bank-number">No. 2100-845912</div>
+                <div class="bank-meta">Titular: ToteArt Ecuador Cía. Ltda.</div>
+              </div>
+
+              <div class="bank-subcard">
+                <h3 class="bank-name" style="font-size:14px; margin-bottom:4px;">Produbanco</h3>
+                <div class="bank-meta">Tipo: Cuenta de Ahorros</div>
+                <div class="bank-number">No. 1205-0849203</div>
+                <div class="bank-meta">Titular: ToteArt Ecuador Cía. Ltda.</div>
+              </div>
+            </div>
+
+            <!-- Adjuntar comprobante -->
+            <div class="voucher-upload-section">
+              <label class="form-label" for="voucherFileInput" style="font-weight: 700;">Comprobante de transferencia bancaria *</label>
+              <div class="voucher-upload-row">
+                <input type="file" id="voucherFileInput" aria-describedby="voucherHelp" onchange="handleVoucherFileSelected(this)">
+                <div class="voucher-filename-display" id="voucherFileName">comprobante_transferencia.pdf</div>
+              </div>
+              <div id="voucherHelp" style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+                <span>Formatos: PDF, JPG, PNG (máx. 5MB)</span>
+                <span>Verificamos tu pago en ~15 minutos.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Opción Contra Entrega -->
+          <label class="radio-option-card" id="optionContraEntregaCard" onclick="selectPaymentMethod('contrapago')" style="margin-top: 12px;">
+            <input type="radio" name="paymentMethod" id="radioContra" value="contrapago" aria-describedby="contraEntregaNotice">
+            <div class="radio-option-content">
+              <div class="radio-option-title">
+                <span>Pago Contra Entrega (Contrapago)</span>
+              </div>
+              <p class="radio-option-desc" id="contraEntregaNotice">No disponible para envíos a domicilio. Exclusivo para retiro en taller.</p>
+            </div>
+          </label>
+        </section>
+      </div>
+
+      <!-- Columna Derecha: Desglose del Pago -->
+      <aside class="order-summary-card" aria-label="Desglose del pago">
+        <h2 class="order-summary-title">Desglose del Pago</h2>
+
+        <div class="checkout-items-list" id="checkoutItemsList">
+          <!-- Renderizado dinámico vía JS -->
+        </div>
+
+        <div class="summary-row">
+          <span>Subtotal productos:</span>
+          <span id="checkoutSubtotalDisplay">$0.00 USD</span>
+        </div>
+
+        <div class="summary-row">
+          <span id="checkoutShippingLabel">Recargo por Envío a domicilio:</span>
+          <span id="checkoutShippingCost" class="delivery-price-text">+ $5.00 USD</span>
+        </div>
+
+        <div class="summary-row total">
+          <span>Total Final a Pagar:</span>
+          <span id="checkoutTotalDisplay">$0.00 USD</span>
+        </div>
+
+        <button type="button" class="btn-checkout-primary" id="btnConfirmOrder" onclick="executeOrderConfirmation()">
+          Confirmar Pedido
+        </button>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    let currentDeliveryMethod = 'envio';
+    let currentPaymentMethod = 'transferencia';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Proteger la vista: requiere autenticación
+      const user = getCurrentUser();
+      if (!user) {
+        window.location.href = 'login.html?redirect=checkout.html';
+        return;
+      }
+
+      // Si el carrito está vacío, redirigir a catálogo
+      const cart = getStoredCart();
+      if (cart.length === 0) {
+        window.location.href = 'catalogo.html';
+        return;
+      }
+
+      // Autocompletar nombre si existe
+      if (user.nombre) {
+        const nameInput = document.getElementById('shippingName');
+        if (nameInput) nameInput.value = user.nombre;
+      }
+
+      renderCheckoutSummary();
+    });
+
+    function renderCheckoutSummary() {
+      const cart = getStoredCart();
+      const subtotal = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+      const shippingCost = currentDeliveryMethod === 'envio' ? 5.00 : 0.00;
+      const total = subtotal + shippingCost;
+
+      const itemsListContainer = document.getElementById('checkoutItemsList');
+      if (itemsListContainer) {
+        itemsListContainer.innerHTML = cart.map(item => `
+          <div class="checkout-item-line">
+            <span>${item.product.title} (x${item.quantity})</span>
+            <span>$${(item.product.price * item.quantity).toFixed(2)}</span>
+          </div>
+        `).join('');
+      }
+
+      const subtotalDisplay = document.getElementById('checkoutSubtotalDisplay');
+      if (subtotalDisplay) subtotalDisplay.textContent = `$${subtotal.toFixed(2)} USD`;
+
+      const shippingLabel = document.getElementById('checkoutShippingLabel');
+      const shippingDisplay = document.getElementById('checkoutShippingCost');
+      if (shippingLabel && shippingDisplay) {
+        if (currentDeliveryMethod === 'envio') {
+          shippingLabel.textContent = 'Recargo por Envío a domicilio:';
+          shippingDisplay.textContent = '+ $5.00 USD';
+        } else {
+          shippingLabel.textContent = 'Retiro en Taller:';
+          shippingDisplay.textContent = 'GRATIS ($0.00)';
+        }
+      }
+
+      const totalDisplay = document.getElementById('checkoutTotalDisplay');
+      if (totalDisplay) totalDisplay.textContent = `$${total.toFixed(2)} USD`;
+    }
+
+    function selectDeliveryMethod(method) {
+      currentDeliveryMethod = method;
+
+      const radioRetiro = document.getElementById('radioRetiro');
+      if (radioRetiro) radioRetiro.checked = (method === 'retiro');
+      const radioEnvio = document.getElementById('radioEnvio');
+      if (radioEnvio) radioEnvio.checked = (method === 'envio');
+
+      const cardRetiro = document.getElementById('optionRetiroCard');
+      if (cardRetiro) cardRetiro.classList.toggle('active', method === 'retiro');
+      const cardEnvio = document.getElementById('optionEnvioCard');
+      if (cardEnvio) cardEnvio.classList.toggle('active', method === 'envio');
+
+      const shippingForm = document.getElementById('shippingFormBlock');
+      if (shippingForm) shippingForm.style.display = (method === 'envio') ? 'block' : 'none';
+
+      // Restricción para contra entrega
+      const contraRadio = document.getElementById('radioContra');
+      const contraCard = document.getElementById('optionContraEntregaCard');
+      const contraNotice = document.getElementById('contraEntregaNotice');
+
+      if (method === 'envio') {
+        if (contraRadio) contraRadio.disabled = true;
+        if (contraCard) {
+          contraCard.style.opacity = '0.55';
+          contraCard.style.cursor = 'not-allowed';
+        }
+        if (contraNotice) contraNotice.textContent = 'No disponible para envíos a domicilio. Exclusivo para retiro en taller.';
+        selectPaymentMethod('transferencia');
+      } else {
+        if (contraRadio) contraRadio.disabled = false;
+        if (contraCard) {
+          contraCard.style.opacity = '1';
+          contraCard.style.cursor = 'pointer';
+        }
+        if (contraNotice) contraNotice.textContent = 'Cancela en efectivo o tarjeta directamente al retirar tu pedido en nuestro taller.';
+      }
+
+      renderCheckoutSummary();
+    }
+
+    function selectPaymentMethod(method) {
+      if (method === 'contrapago' && currentDeliveryMethod === 'envio') return;
+
+      currentPaymentMethod = method;
+
+      const radioTransfer = document.getElementById('radioTransfer');
+      if (radioTransfer) radioTransfer.checked = (method === 'transferencia');
+      const radioContra = document.getElementById('radioContra');
+      if (radioContra) radioContra.checked = (method === 'contrapago');
+
+      const cardTransfer = document.getElementById('optionTransferCard');
+      if (cardTransfer) cardTransfer.classList.toggle('active', method === 'transferencia');
+      const cardContra = document.getElementById('optionContraEntregaCard');
+      if (cardContra) cardContra.classList.toggle('active', method === 'contrapago');
+
+      const bankBlock = document.getElementById('bankDetailsBlock');
+      if (bankBlock) bankBlock.style.display = (method === 'transferencia') ? 'block' : 'none';
+    }
+
+    function handleVoucherFileSelected(input) {
+      if (input.files && input.files[0]) {
+        document.getElementById('voucherFileName').textContent = input.files[0].name;
+      }
+    }
+
+    function executeOrderConfirmation() {
+      const cart = getStoredCart();
+      if (cart.length === 0) return;
+
+      const subtotal = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+      const shippingCost = currentDeliveryMethod === 'envio' ? 5.00 : 0.00;
+      const total = subtotal + shippingCost;
+      const orderCode = currentDeliveryMethod === 'envio' ? '#TAT-2026-8941' : '#TAT-2026-8942';
+
+      const user = getCurrentUser() || { nombre: 'Paula Morales', email: 'paula.morales@correo.com' };
+
+      const newOrder = {
+        code: orderCode,
+        date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        total: total.toFixed(2),
+        deliveryMethod: currentDeliveryMethod,
+        paymentMethod: currentPaymentMethod,
+        customerName: user.nombre,
+        items: cart.map(item => ({ product: item.product, quantity: item.quantity }))
+      };
+
+      const orders = getStoredOrders();
+      orders.unshift(newOrder);
+      saveOrders(orders);
+
+      // Vaciar carrito
+      saveCart([]);
+      updateBadges();
+
+      // Redirigir a la vista de pedidos con confirmación
+      window.location.href = `pedidos.html?orderId=${encodeURIComponent(orderCode)}&new=true`;
+    }
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carrito de Compras - ToteArt</title>  
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+       ========================================================================= -->
+  <header class="header-wrapper">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" aria-label="Ir a página de inicio de ToteArt">
+        <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="">
+        <span>ToteArt</span>
+      </a>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar tote bag bordado..." aria-label="Buscar tote bag bordado">
+      </div>
+
+      <nav class="header-nav" aria-label="Navegación principal">
+        <a href="catalogo.html" class="nav-link">Catálogo</a>
+        <a href="pedidos.html" class="nav-link" id="navOrdersBtn">Mis Pedidos</a>
+        <a href="carrito.html" class="cart-btn active" title="Ver Carrito de compras" aria-label="Ver carrito de compras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cartBadgeCount" aria-label="Artículos en carrito">0</span>
+        </a>
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="window.location.href='login.html'">
+          Iniciar sesión
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL: VISTA CARRITO
+       ========================================================================= -->
+  <main class="main-wrapper">
+    <a href="catalogo.html" class="back-link" style="display:inline-block; text-decoration:none; margin-bottom:16px;">
+      ← Seguir explorando el catálogo
+    </a>
+
+    <h1 class="page-title">Carrito de compras</h1>
+
+    <div id="cartContentWrap">
+      <!-- Renderizado dinámico vía JS -->
+    </div>
+  </main>
+
+  <!-- Modal de Confirmación de Eliminación -->
+  <div class="modal-overlay" id="confirmDeleteModal" role="dialog" aria-modal="true" aria-labelledby="modalTitleText">
+    <div class="modal-card">
+      <h3 class="modal-title" id="modalTitleText">¿Estás seguro de que quieres eliminar este producto?</h3>
+      <div class="modal-body">
+        <span class="modal-item-highlight" id="modalItemTitle">Tote bag</span>
+        <span id="modalBodySubtext">Podrás volver a añadirlo desde el catálogo en cualquier momento.</span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" onclick="closeDeleteModal()">Cancelar</button>
+        <button class="btn-modal-confirm" id="btnModalConfirmDelete">Sí, eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let pendingDeleteId = null;
+
+    function renderCartView() {
+      const wrap = document.getElementById('cartContentWrap');
+      let cart = getStoredCart();
+
+      // Sanitizar el array para eliminar cualquier elemento nulo o con cantidad <= 0
+      cart = cart.filter(item => item && item.product && item.quantity > 0);
+      saveCart(cart);
+      updateBadges();
+
+      if (cart.length === 0) {
+        wrap.innerHTML = `
+          <div class="empty-state-card">
+            <div class="empty-icon-circle" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7A7067" stroke-width="2">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+            </div>
+            <h2 class="empty-state-title" style="font-size:20px;">Tu carrito está vacío</h2>
+            <p class="empty-state-desc">Parece que aún no has agregado ningún bolso bordado artesanal.</p>
+            <a href="catalogo.html" class="btn-checkout-primary" style="margin: 0 auto; max-width: 220px; display:inline-block; text-decoration:none; text-align:center;">
+              Explorar catálogo
+            </a>
+          </div>
+        `;
+        return;
+      }
+
+      const subtotal = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+
+      wrap.innerHTML = `
+        <div class="cart-layout">
+          <!-- Tabla de productos -->
+          <div class="cart-table-card">
+            <table class="cart-table">
+              <caption class="sr-only" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;">Lista de productos en tu carrito de compras</caption>
+              <thead>
+                <tr>
+                  <th scope="col">PRODUCTO</th>
+                  <th scope="col" class="col-price">PRECIO</th>
+                  <th scope="col" class="col-qty">CANTIDAD</th>
+                  <th scope="col" class="col-subtotal">SUBTOTAL</th>
+                  <th scope="col" class="col-action"><span class="sr-only" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${cart.map(item => `
+                  <tr>
+                    <td>
+                      <div class="cart-product-cell">
+                        <div class="cart-product-thumb">
+                          <img src="img/${item.product.imgFile}" alt="${item.product.altText || item.product.title}" onerror="handleImgFallback(this)">
+                        </div>
+                        <div>
+                          <div class="cart-product-title">
+                            <a href="producto.html?id=${encodeURIComponent(item.product.id)}" style="color:inherit; text-decoration:none;">
+                              ${item.product.title}
+                            </a>
+                          </div>
+                          <div class="cart-product-specs">${item.product.categoryLabel} • ${item.product.specs}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="cart-price-cell">$${item.product.price.toFixed(2)}</td>
+                    <td>
+                      <div class="qty-counter" role="group" aria-label="Cantidad para ${item.product.title}">
+                        <button type="button" onclick="handleQtyChange('${item.product.id}', -1)" aria-label="Restar una unidad">-</button>
+                        <span aria-live="polite">${item.quantity}</span>
+                        <button type="button" onclick="handleQtyChange('${item.product.id}', 1)" aria-label="Añadir una unidad">+</button>
+                      </div>
+                    </td>
+                    <td class="cart-subtotal-cell">$${(item.product.price * item.quantity).toFixed(2)}</td>
+                    <td style="text-align: right;">
+                      <button type="button" class="btn-remove-square" aria-label="Eliminar ${item.product.title} del carrito" onclick="promptRemoveCartItem('${item.product.id}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Quitar
+                      </button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Resumen del Pedido -->
+          <aside class="order-summary-card" aria-label="Resumen de la orden">
+            <h2 class="order-summary-title">Resumen del Pedido</h2>
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span style="font-weight:700;">$${subtotal.toFixed(2)} USD</span>
+            </div>
+            <div class="summary-row">
+              <span>Envío:</span>
+              <span style="color:var(--text-muted);">Calculado en checkout</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total estimado:</span>
+              <span>$${subtotal.toFixed(2)} USD</span>
+            </div>
+            <button type="button" class="btn-checkout-primary" onclick="proceedToCheckoutFlow()">
+              Continuar con la compra
+            </button>
+          </aside>
+        </div>
+      `;
+    }
+
+    function handleQtyChange(productId, delta) {
+      const cart = getStoredCart();
+      const item = cart.find(i => i.product && i.product.id === productId);
+      if (!item) return;
+
+      if (item.quantity + delta <= 0) {
+        promptRemoveCartItem(productId);
+      } else {
+        changeCartItemQty(productId, delta);
+      }
+    }
+
+    function promptRemoveCartItem(productId) {
+      pendingDeleteId = productId;
+      const cart = getStoredCart();
+      const item = cart.find(i => i.product && i.product.id === productId);
+      if (!item) return;
+
+      document.getElementById('modalTitleText').textContent = '¿Estás seguro de que quieres eliminar este producto de tu carrito?';
+      document.getElementById('modalItemTitle').textContent = `${item.product.title} ($${item.product.price.toFixed(2)} USD)`;
+      document.getElementById('modalBodySubtext').textContent = 'Podrás volver a añadirlo desde el catálogo en cualquier momento.';
+
+      document.getElementById('confirmDeleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('confirmDeleteModal').classList.remove('active');
+      pendingDeleteId = null;
+    }
+
+    document.getElementById('btnModalConfirmDelete').addEventListener('click', () => {
+      if (pendingDeleteId) {
+        removeCartItem(pendingDeleteId);
+      }
+      closeDeleteModal();
+    });
+
+    function proceedToCheckoutFlow() {
+      const user = getCurrentUser();
+      if (!user) {
+        // Obligatorio estar logueado para acceder a checkout
+        window.location.href = 'login.html?redirect=checkout.html';
+      } else {
+        window.location.href = 'checkout.html';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCartView();
+    });
+  </script>
+</body>
+</html>
+

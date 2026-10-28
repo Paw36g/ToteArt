@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalle del Producto - ToteArt</title>  
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+       ========================================================================= -->
+  <header class="header-wrapper">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" aria-label="Ir a página de inicio de ToteArt">
+        <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="">
+        <span>ToteArt</span>
+      </a>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar tote bag bordado..." aria-label="Buscar tote bag bordado">
+      </div>
+
+      <nav class="header-nav" aria-label="Navegación principal">
+        <a href="catalogo.html" class="nav-link">Catálogo</a>
+        <a href="pedidos.html" class="nav-link" id="navOrdersBtn">Mis Pedidos</a>
+        <a href="carrito.html" class="cart-btn" title="Ver Carrito de compras" aria-label="Ver carrito de compras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cartBadgeCount" aria-label="Artículos en carrito">0</span>
+        </a>
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="window.location.href='login.html'">
+          Iniciar sesión
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL: FICHA DE PRODUCTO (PDP)
+       ========================================================================= -->
+  <main class="main-wrapper">
+    <a href="catalogo.html" class="back-link" style="display:inline-block; text-decoration:none; margin-bottom:16px;">
+      ← Volver al catálogo
+    </a>
+
+    <div class="pdp-card">
+      <div class="pdp-gallery-box">
+        <img id="pdpImage" src="" alt="" onerror="handleImgFallback(this)">
+      </div>
+
+      <div class="pdp-details">
+        <span class="pdp-collection-tag" id="pdpCategory">COLECCIÓN ANIMALES</span>
+        <h1 class="pdp-title" id="pdpTitle">Cargando producto...</h1>
+        <div class="pdp-rating">
+          <span class="star" aria-hidden="true" style="color:var(--rating)">★★★★★</span>
+          <span id="pdpRatingText">4.9 (118 reseñas verificadas)</span>
+        </div>
+        <div class="pdp-price" id="pdpPrice">$0.00 USD</div>
+        <p class="pdp-desc" id="pdpDesc">
+          Cargando descripción detallada...
+        </p>
+
+        <div class="quantity-control">
+          <span class="quantity-label" id="qtyLabel">Cantidad:</span>
+          <div class="qty-counter" role="group" aria-labelledby="qtyLabel">
+            <button type="button" onclick="modifyQty(-1)" aria-label="Disminuir cantidad">-</button>
+            <span id="pdpQtyVal" aria-live="polite">1</span>
+            <button type="button" onclick="modifyQty(1)" aria-label="Aumentar cantidad">+</button>
+          </div>
+        </div>
+
+        <div class="pdp-actions">
+          <button class="btn-pdp-primary" id="btnAddToCartPdp" onclick="addCurrentProductToCart(event)">
+            Añadir al carrito
+          </button>
+          <button class="btn-pdp-buy" onclick="handleBuyNow()">
+            Comprar ahora
+          </button>
+          <button class="btn-pdp-wishlist" id="pdpWishlistToggleBtn" onclick="toggleWishlist()">
+            + Guardar en mi lista
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de recomendaciones -->
+    <section class="section-header" style="margin-top: 40px;" aria-labelledby="relatedHeading">
+      <h2 class="section-title" id="relatedHeading" style="font-size: 18px;">También te podría interesar</h2>
+    </section>
+    <div class="product-cards-grid" id="pdpRelatedGrid">
+      <!-- Renderizado dinámico vía JS -->
+    </div>
+  </main>
+
+  <script>
+    let currentProduct = null;
+    let currentQty = 1;
+
+    function modifyQty(delta) {
+      currentQty = Math.max(1, currentQty + delta);
+      const qtyElem = document.getElementById('pdpQtyVal');
+      if (qtyElem) qtyElem.textContent = currentQty;
+    }
+
+    function addCurrentProductToCart(event) {
+      if (!currentProduct) return;
+
+      let cart = getStoredCart();
+      const existing = cart.find(item => item.product && item.product.id === currentProduct.id);
+
+      if (existing) {
+        existing.quantity = (existing.quantity || 1) + currentQty;
+      } else {
+        cart.push({ product: currentProduct, quantity: currentQty });
+      }
+
+      cart = cart.filter(item => item && item.product && item.quantity > 0);
+      saveCart(cart);
+      updateBadges();
+
+      const btn = document.getElementById('btnAddToCartPdp');
+      showButtonNotification(btn, "✓ Añadido al carrito", 'cart');
+    }
+
+    function handleBuyNow() {
+      if (!currentProduct) return;
+
+      // 1. Agregar el producto actual al carrito
+      let cart = getStoredCart();
+      const existing = cart.find(item => item.product && item.product.id === currentProduct.id);
+      if (existing) {
+        existing.quantity = (existing.quantity || 1) + currentQty;
+      } else {
+        cart.push({ product: currentProduct, quantity: currentQty });
+      }
+      cart = cart.filter(item => item && item.product && item.quantity > 0);
+      saveCart(cart);
+      updateBadges();
+
+      // 2. Comprobar si el usuario está autenticado
+      const user = getCurrentUser();
+      if (!user) {
+        // Redirigir a login para autenticación requerida
+        window.location.href = 'login.html?redirect=checkout.html';
+      } else {
+        window.location.href = 'checkout.html';
+      }
+    }
+
+    function toggleWishlist() {
+      if (!currentProduct) return;
+
+      let wishlist = getStoredWishlist();
+      const index = wishlist.findIndex(p => p.id === currentProduct.id);
+      let inWish = false;
+
+      if (index >= 0) {
+        wishlist.splice(index, 1);
+        inWish = false;
+      } else {
+        wishlist.push(currentProduct);
+        inWish = true;
+      }
+
+      saveWishlist(wishlist);
+      updateBadges();
+      updateWishlistButtonUI(inWish);
+
+      const btn = document.getElementById('pdpWishlistToggleBtn');
+      const msg = inWish ? "♥ Guardado en mi lista" : "Eliminado de mi lista";
+      showButtonNotification(btn, msg, 'wishlist');
+    }
+
+    function updateWishlistButtonUI(inWish) {
+      const btn = document.getElementById('pdpWishlistToggleBtn');
+      if (btn) {
+        btn.textContent = inWish ? "✓ Guardado en mi lista" : "+ Guardar en mi lista";
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const prodId = params.get('id') || 'totoro';
+
+      currentProduct = PRODUCTS.find(p => p.id === prodId) || PRODUCTS[0];
+
+      // Asignar datos del producto
+      document.title = `${currentProduct.title} - ToteArt`;
+      const imgElem = document.getElementById('pdpImage');
+      if (imgElem) {
+        imgElem.src = `img/${currentProduct.imgFile}`;
+        imgElem.alt = currentProduct.altText || currentProduct.title;
+      }
+      const catElem = document.getElementById('pdpCategory');
+      if (catElem) catElem.textContent = currentProduct.categoryLabel.toUpperCase();
+      const titleElem = document.getElementById('pdpTitle');
+      if (titleElem) titleElem.textContent = currentProduct.title;
+      const ratingElem = document.getElementById('pdpRatingText');
+      if (ratingElem) ratingElem.textContent = `${currentProduct.rating} (${currentProduct.reviews} reseñas verificadas)`;
+      const priceElem = document.getElementById('pdpPrice');
+      if (priceElem) priceElem.textContent = `$${currentProduct.price.toFixed(2)} USD`;
+      const descElem = document.getElementById('pdpDesc');
+      if (descElem) descElem.textContent = currentProduct.desc;
+
+      // Estado botón lista
+      const wishlist = getStoredWishlist();
+      const inWish = wishlist.some(p => p.id === currentProduct.id);
+      updateWishlistButtonUI(inWish);
+
+      // Productos recomendados
+      const relatedGrid = document.getElementById('pdpRelatedGrid');
+      if (relatedGrid) {
+        const related = PRODUCTS.filter(p => p.id !== currentProduct.id).slice(0, 3);
+        relatedGrid.innerHTML = related.map(p => createAccessibleProductCardHtml(p)).join('');
+      }
+    });
+  </script>
+</body>
+</html>
+

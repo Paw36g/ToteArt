@@ -29,7 +29,7 @@
   --text-muted: #6E6862;
   --danger: #D32F2F;
   --danger-bg: #FEECEB;
-  --rating: #E5A83B;
+  --rating: #9A5B00; /* Mostaza / Ámbar oscuro con alto contraste WCAG */
   --inactive: #D4CFCA;
 
   /* Aliases de compatibilidad */
@@ -403,7 +403,7 @@ body {
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: var(--text-muted);
+  color: #4A443E; /* Contraste WCAG accesible */
   margin-bottom: 8px;
 }
 
@@ -512,7 +512,7 @@ body {
 
 .pdp-rating {
   font-size: 13px;
-  color: var(--text-muted);
+  color: #4A443E; /* Contraste WCAG accesible */
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -1604,6 +1604,29 @@ body {
   border-width: 5px;
   border-style: solid;
   border-color: var(--primary) transparent transparent transparent;
+}
+
+/* Enlace de producto accesible en tarjetas */
+.product-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.product-card-link:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 4px;
+  border-radius: var(--radius-md);
+}
+
+/* Indicadores de foco visibles para accesibilidad WCAG */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* Variante para lista de deseos (marrón) */

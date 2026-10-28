@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo Completo - ToteArt</title>  
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+       ========================================================================= -->
+  <header class="header-wrapper">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" aria-label="Ir a página de inicio de ToteArt">
+        <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="">
+        <span>ToteArt</span>
+      </a>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar tote bag bordado..." aria-label="Buscar tote bag bordado">
+      </div>
+
+      <nav class="header-nav" aria-label="Navegación principal">
+        <a href="catalogo.html" class="nav-link active">Catálogo</a>
+        <a href="pedidos.html" class="nav-link" id="navOrdersBtn">Mis Pedidos</a>
+        <a href="carrito.html" class="cart-btn" title="Ver Carrito de compras" aria-label="Ver carrito de compras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cartBadgeCount" aria-label="Artículos en carrito">0</span>
+        </a>
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="window.location.href='login.html'">
+          Iniciar sesión
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL: CATÁLOGO
+       ========================================================================= -->
+  <main class="main-wrapper">
+    <div class="catalog-grid catalog-layout">
+      <!-- Sidebar de Categorías -->
+      <aside class="sidebar-box" aria-label="Filtro de categorías">
+        <h3 class="sidebar-title">CATEGORÍAS</h3>
+        <ul class="category-list">
+          <li>
+            <button class="category-item active" data-cat="todos" onclick="applyCategoryFilter('todos', this)">
+              <span>Todos</span>
+              <span class="category-badge">10</span>
+            </button>
+          </li>
+          <li>
+            <button class="category-item" data-cat="flores" onclick="applyCategoryFilter('flores', this)">
+              <span>Flores</span>
+              <span class="category-badge">4</span>
+            </button>
+          </li>
+          <li>
+            <button class="category-item" data-cat="animales" onclick="applyCategoryFilter('animales', this)">
+              <span>Animales</span>
+              <span class="category-badge">4</span>
+            </button>
+          </li>
+          <li>
+            <button class="category-item" data-cat="personajes" onclick="applyCategoryFilter('personajes', this)">
+              <span>Personajes animados</span>
+              <span class="category-badge">2</span>
+            </button>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Área Principal de Productos -->
+      <div class="catalog-content">
+        <!-- Más comprados del mes -->
+        <section id="featuredSection" aria-labelledby="featuredSectionTitle">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <h2 class="section-title" id="featuredSectionTitle">Más Comprados del Mes</h2>
+              <span class="section-subtitle-tag">• Colección destacada de la semana</span>
+            </div>
+          </div>
+          <div class="product-cards-grid" id="featuredGrid">
+            <!-- Renderizado dinámico vía JS -->
+          </div>
+        </section>
+
+        <!-- Catálogo Principal / Colección Seleccionada -->
+        <section aria-labelledby="catalogSectionTitle">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title" id="catalogSectionTitle">Catálogo Completo</h2>
+              <p id="catalogSectionDesc" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Bordados sobre lienzo 100% algodón crudo con capacidad de carga hasta 10 kg.</p>
+            </div>
+          </div>
+          <div class="product-cards-grid" id="mainCatalogGrid">
+            <!-- Renderizado dinámico vía JS -->
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let activeCategory = 'todos';
+
+    function renderProducts() {
+      const featuredGrid = document.getElementById('featuredGrid');
+      const mainCatalogGrid = document.getElementById('mainCatalogGrid');
+      const featuredSection = document.getElementById('featuredSection');
+      const titleElem = document.getElementById('catalogSectionTitle');
+      const descElem = document.getElementById('catalogSectionDesc');
+
+      const params = new URLSearchParams(window.location.search);
+      const searchQuery = params.get('q');
+      const catParam = params.get('cat');
+
+      if (catParam && ['flores', 'animales', 'personajes', 'todos'].includes(catParam)) {
+        activeCategory = catParam;
+        document.querySelectorAll('.category-item').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-cat') === catParam);
+        });
+      }
+
+      // 1. Si hay búsqueda por texto
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase().trim();
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = searchQuery;
+
+        const results = PRODUCTS.filter(p =>
+          p.title.toLowerCase().includes(q) ||
+          p.categoryLabel.toLowerCase().includes(q) ||
+          (p.specs && p.specs.toLowerCase().includes(q))
+        );
+
+        if (featuredSection) featuredSection.style.display = 'none';
+        if (titleElem) titleElem.textContent = `Resultados para "${searchQuery}"`;
+        if (descElem) descElem.textContent = `Mostrando ${results.length} producto${results.length === 1 ? '' : 's'}`;
+
+        if (mainCatalogGrid) {
+          if (results.length > 0) {
+            mainCatalogGrid.innerHTML = results.map(p => createAccessibleProductCardHtml(p)).join('');
+          } else {
+            mainCatalogGrid.innerHTML = `
+              <div style="grid-column: 1/-1; padding: 48px 20px; text-align: center; color: var(--text-muted);">
+                <p style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">
+                  No se encontraron productos para "${searchQuery}".
+                </p>
+                <p style="font-size: 14px;">
+                  Intenta buscar por otro término o <a href="catalogo.html" style="color:var(--primary); font-weight:600;">ver todo el catálogo</a>.
+                </p>
+              </div>
+            `;
+          }
+        }
+        return;
+      }
+
+      // 2. Render normal según categoría
+      if (featuredGrid) {
+        const featured = PRODUCTS.filter(p => p.isFeatured);
+        featuredGrid.innerHTML = featured.map(p => createAccessibleProductCardHtml(p)).join('');
+      }
+
+      let filtered = PRODUCTS;
+      if (activeCategory !== 'todos') {
+        filtered = PRODUCTS.filter(p => p.category === activeCategory);
+        if (featuredSection) featuredSection.style.display = 'none';
+        const catNames = { flores: 'Flores', animales: 'Animales', personajes: 'Personajes Animados' };
+        if (titleElem) titleElem.textContent = `Colección ${catNames[activeCategory] || ''}`;
+        if (descElem) descElem.textContent = `Explora nuestra selección especial de bolsos bordados a mano.`;
+      } else {
+        if (featuredSection) featuredSection.style.display = 'block';
+        if (titleElem) titleElem.textContent = 'Catálogo Completo';
+        if (descElem) descElem.textContent = 'Bordados sobre lienzo 100% algodón crudo con capacidad de carga hasta 10 kg.';
+      }
+
+      if (mainCatalogGrid) {
+        mainCatalogGrid.innerHTML = filtered.map(p => createAccessibleProductCardHtml(p)).join('');
+      }
+    }
+
+    function applyCategoryFilter(cat, btn) {
+      activeCategory = cat;
+      document.querySelectorAll('.category-item').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      // Limpiar query param de búsqueda si existía
+      const url = new URL(window.location);
+      url.searchParams.delete('q');
+      url.searchParams.set('cat', cat);
+      window.history.pushState({}, '', url);
+
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) searchInput.value = '';
+
+      renderProducts();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderProducts();
+    });
+  </script>
+</body>
+</html>
+

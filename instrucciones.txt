@@ -1,0 +1,79 @@
+# INSTRUCCIONES DE REFACTORIZACIÓN Y MEJORAS DE ACCESIBILIDAD PARA TOTEART
+
+
+
+Hola. Necesito que refactorices el código del proyecto "ToteArt". Actualmente, todo el HTML (vistas) y JavaScript están en un solo archivo `index.html`. Debes separar el proyecto en múltiples archivos HTML, extraer la lógica a un archivo JS independiente y solucionar varios problemas de lógica y accesibilidad (WCAG). Los estilos se mantienen en `styles.css`.
+
+
+
+Aplica los siguientes cambios de manera exhaustiva:
+
+
+
+## 1. REESTRUCTURACIÓN DE ARCHIVOS (MODULARIZACIÓN)
+
+- **HTML Múltiples:** Elimina la estructura de SPA (Single Page Application) del `index.html`. Crea los siguientes archivos independientes, cada uno con su propio `<header>`, `<main>` y enlances al `styles.css` y al nuevo JS:
+
+  - `index.html` (Portada/Home)
+
+  - `catalogo.html` (Listado de productos y filtros)
+
+  - `producto.html` (Ficha de producto/PDP - los datos se cargarán por URL params, ej: `?id=totoro`)
+
+  - `carrito.html` (Vista del carrito de compras)
+
+  - `login.html` (Inicio de sesión)
+
+  - `registro.html` (Registro de cuenta mínimo y necesario)
+
+  - `checkout.html` (Formulario de envío y pago)
+
+  - `perfil.html` (Nueva pantalla para gestionar la cuenta)
+
+  - `pedidos.html` (Historial y tracking)
+
+- **JavaScript Centralizado:** Crea un archivo `app.js` que contenga toda la lógica del e-commerce (base de datos de productos en JSON/Array, funciones del carrito, autenticación simulada, etc.) y vincúlalo en todos los HTML usando `<script src="app.js" defer></script>`.
+
+
+
+## 2. FLUJO DE AUTENTICACIÓN Y COMPRA
+
+- **Eliminar Compra como Invitado:** El usuario puede navegar libremente, pero para acceder a `checkout.html` debe estar autenticado. 
+
+- **Lógica de Redirección:** Si un usuario no logueado intenta ir a "Comprar ahora" o procede al pago desde el carrito, redirígelo a `login.html`. Si no tiene cuenta, desde ahí debe poder ir a `registro.html`.
+
+- **Registro Minimalista:** El formulario de `registro.html` debe pedir estrictamente lo mínimo: Nombre completo, Correo electrónico y Contraseña. Elimina campos que abrumen.
+
+- **Perfil de Usuario:** En `perfil.html`, crea un formulario sencillo donde el usuario (una vez logueado) pueda ver y actualizar su Correo electrónico y cambiar su Contraseña. No incluyas foto de perfil.
+
+
+
+## 3. CORRECCIÓN DE LÓGICA DEL CARRITO
+
+- Revisa las funciones de agregar, restar y eliminar productos (`changeCartItemQty`, `promptRemoveItem`, etc.).
+
+- Asegúrate de que si la cantidad de un producto llega a 0, el producto se elimine completamente del array del carrito (usando `.filter()` o `.splice()`), evitando que queden objetos nulos o con existencia 0 que rompan el renderizado (colapso del carrito).
+
+
+
+## 4. MEJORAS DE ACCESIBILIDAD (A11Y - REPORTES DE WAVE)
+
+- **Etiquetas de Formularios (Labels):** En `checkout.html`, `login.html` y `registro.html`, asegúrate de que **todos** los `<input>`, `<select>` y `<textarea>` tengan una etiqueta `<label>` asociada correctamente mediante el atributo `for="id_del_input"`. Para botones con iconos (ej. botón de eliminar), añade `aria-label="Eliminar producto"`.
+
+- **Textos Alternativos (Alt text):** Revisa todas las etiquetas `<img>`. Cambia los `alt` redundantes (ej. `alt="Tote de girasol"` cuando el título ya dice eso) a descripciones útiles que comuniquen la imagen a un lector de pantalla (ej. `alt="Bolso de tela beige bordado a mano con un girasol amarillo grande"`). Si la imagen es puramente decorativa, usa `alt=""`.
+
+- **Contraste de Texto:** En `styles.css`, oscurece el color de las letras de la sección de reseñas y puntuación (estrellas y texto de "4.9 reseñas"). Cambia el color de la clase o variable que controla ese texto a un tono más oscuro que pase las pruebas de contraste WCAG (por ejemplo, en lugar de un gris claro, usa un `#4A443E` o similar).
+
+- **Navegación por Teclado:** Hay interacciones (como abrir el detalle del producto haciendo clic en el `div.product-img-box`) que solo funcionan con mouse. 
+
+  - Asegúrate de que todos los elementos interactivos sean focusables (usa `<button>` o `<a>` en lugar de `<div>` con `onclick`). 
+
+  - Si debes usar un `<div>`, añádele `tabindex="0"` y un manejador de eventos para las teclas `Enter` y `Space`.
+
+  - Asegúrate de que los elementos tengan un estado `:focus` visible en el CSS.
+
+- **Enlaces Redundantes:** En las tarjetas de producto (`.product-card`), agrupa la imagen y el título del producto dentro de una única etiqueta `<a>` que dirija a `producto.html?id=...`. Elimina los enlaces o botones separados que apuntan exactamente al mismo lugar de detalle para reducir la verbosidad en lectores de pantalla.
+
+
+
+Entrega el código de los nuevos archivos HTML, el archivo `app.js` unificado, y las correcciones necesarias para `styles.css` aplicando todos estos lineamientos.

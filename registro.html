@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear Cuenta - ToteArt</title>  
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+       ========================================================================= -->
+  <header class="header-wrapper">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" aria-label="Ir a página de inicio de ToteArt">
+        <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="">
+        <span>ToteArt</span>
+      </a>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar tote bag bordado..." aria-label="Buscar tote bag bordado">
+      </div>
+
+      <nav class="header-nav" aria-label="Navegación principal">
+        <a href="catalogo.html" class="nav-link">Catálogo</a>
+        <a href="pedidos.html" class="nav-link" id="navOrdersBtn">Mis Pedidos</a>
+        <a href="carrito.html" class="cart-btn" title="Ver Carrito de compras" aria-label="Ver carrito de compras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cartBadgeCount" aria-label="Artículos en carrito">0</span>
+        </a>
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="window.location.href='login.html'">
+          Iniciar sesión
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL: REGISTRO MINIMALISTA
+       ========================================================================= -->
+  <main class="main-wrapper">
+    <div style="max-width: 480px; margin: 30px auto;">
+      <a href="login.html" class="back-link" style="display:inline-block; text-decoration:none; margin-bottom:16px;">
+        ← Volver a inicio de sesión
+      </a>
+
+      <div class="auth-card">
+        <h1 class="auth-card-title" style="font-size: 22px; text-align:center;">Crea tu cuenta en ToteArt</h1>
+        <p class="auth-card-desc" style="text-align:center;">Solo te pediremos los datos indispensables para procesar tus compras y envíos.</p>
+
+        <form id="registerForm" onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label class="form-label" for="regFullName">Nombre completo *</label>
+            <input type="text" class="form-control" id="regFullName" name="fullName" required placeholder="Ej. Paula Morales" autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regEmail">Correo electrónico *</label>
+            <input type="email" class="form-control" id="regEmail" name="email" required placeholder="tu@correo.com" autocomplete="email">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 24px;">
+            <label class="form-label" for="regPassword">Contraseña *</label>
+            <input type="password" class="form-control" id="regPassword" name="password" required minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+          </div>
+
+          <button type="submit" class="btn-checkout-primary" style="width: 100%;">
+            Registrarse y continuar
+          </button>
+        </form>
+
+        <p style="text-align:center; font-size:13px; margin-top:20px;">
+          ¿Ya tienes una cuenta?
+          <a href="login.html" id="loginBackLink" style="color:var(--primary); font-weight:600; text-decoration:none;">
+            Inicia sesión aquí
+          </a>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect');
+      if (redirect) {
+        const loginLink = document.getElementById('loginBackLink');
+        if (loginLink) {
+          loginLink.href = `login.html?redirect=${encodeURIComponent(redirect)}`;
+        }
+      }
+    });
+
+    function handleRegister(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('regFullName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+
+      const newUser = {
+        nombre: nombre,
+        email: email
+      };
+
+      setCurrentUser(newUser);
+      updateBadges();
+
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect');
+
+      if (redirect) {
+        window.location.href = redirect;
+      } else {
+        window.location.href = 'catalogo.html';
+      }
+    }
+  </script>
+</body>
+</html>
+
