@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="img/icono.ico">
+  <title>Catálogo Completo - ToteArt</title>  
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+       ========================================================================= -->
+  <header class="header-wrapper">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" aria-label="Ir a página de inicio de ToteArt">
+        <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="">
+        <span>ToteArt</span>
+      </a>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar tote bag bordado..." aria-label="Buscar tote bag bordado">
+      </div>
+
+      <nav class="header-nav" aria-label="Navegación principal">
+        <a href="lista.html" class="nav-link" id="navWishlistBtn">Mi Lista (<span id="wishlistCountNav">0</span>)</a>
+        <a href="pedidos.html" class="nav-link" id="navOrdersBtn">Mis Pedidos (<span id="ordersCountNav">0</span>)</a>
+        <a href="carrito.html" class="cart-btn" title="Ver Carrito de compras" aria-label="Ver carrito de compras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cartBadgeCount" aria-label="Artículos en carrito">0</span>
+        </a>
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="window.location.href='login.html'">
+          Iniciar sesión
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL: CATÁLOGO
+       ========================================================================= -->
+  <main class="main-wrapper">
+    <div class="catalog-grid catalog-layout">
+      <!-- Sidebar de Categorías -->
+      <aside class="sidebar-box" aria-label="Filtro de categorías">
+        <h3 class="sidebar-title">CATEGORÍAS</h3>
+        <ul class="category-list">
+          <li>
+            <button class="category-item active" data-cat="todos" onclick="applyCategoryFilter('todos', this)">
+              <span>Todos</span>
+              <span class="category-badge" id="catCountTodos">36</span>
+            </button>
+          </li>
+          <li>
+            <button class="category-item" data-cat="flores" onclick="applyCategoryFilter('flores', this)">
+              <span>Flores</span>
+              <span class="category-badge" id="catCountFlores">12</span>
+            </button>
+          </li>
+          <li>
+            <button class="category-item" data-cat="animales" onclick="applyCategoryFilter('animales', this)">
+              <span>Animales</span>
+              <span class="category-badge" id="catCountAnimales">12</span>
+            </button>
+          </li>
+          <li>
+            <button class="category-item" data-cat="personajes" onclick="applyCategoryFilter('personajes', this)">
+              <span>Personajes animados</span>
+              <span class="category-badge" id="catCountPersonajes">12</span>
+            </button>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Área Principal de Productos -->
+      <div class="catalog-content">
+        <!-- Más comprados del mes -->
+        <section id="featuredSection" aria-labelledby="featuredSectionTitle">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <h2 class="section-title" id="featuredSectionTitle">Más Comprados del Mes</h2>
+              <span class="section-subtitle-tag">• Colección destacada de la semana</span>
+            </div>
+          </div>
+          <div class="product-cards-grid" id="featuredGrid">
+            <!-- Renderizado dinámico vía JS -->
+          </div>
+        </section>
+
+        <!-- Catálogo Principal / Colección Seleccionada -->
+        <section aria-labelledby="catalogSectionTitle">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title" id="catalogSectionTitle">Catálogo Completo</h2>
+              <p id="catalogSectionDesc" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Descubre todos nuestros diseños.</p>
+            </div>
+          </div>
+          <div class="product-cards-grid" id="mainCatalogGrid">
+            <!-- Renderizado dinámico vía JS -->
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let activeCategory = 'todos';
+    let catalogProducts = [];
+
+    async function loadCatalogProducts() {
+      // Conectar el renderizado para leer los 36 productos directamente desde Supabase
+      if (typeof fetchCatalogProductsFromSupabase === 'function') {
+        try {
+          const remoteProducts = await fetchCatalogProductsFromSupabase();
+          if (remoteProducts && remoteProducts.length > 0) {
+            catalogProducts = remoteProducts;
+          }
+        } catch (e) {
+          console.warn('Aviso: Consulta directa a Supabase no completada:', e);
+        }
+      }
+
+      // Si no hay respuesta remota inmediata, asegurar la lista completa de 36 productos
+      if (!catalogProducts || catalogProducts.length === 0) {
+        catalogProducts = (typeof PRODUCTS !== 'undefined') ? PRODUCTS : [];
+      }
+
+      // Actualizar contadores dinámicos del menú lateral
+      const countTodos = catalogProducts.length;
+      const countFlores = catalogProducts.filter(p => p.category === 'flores').length;
+      const countAnimales = catalogProducts.filter(p => p.category === 'animales').length;
+      const countPersonajes = catalogProducts.filter(p => p.category === 'personajes').length;
+
+      const elTodos = document.getElementById('catCountTodos');
+      const elFlores = document.getElementById('catCountFlores');
+      const elAnimales = document.getElementById('catCountAnimales');
+      const elPersonajes = document.getElementById('catCountPersonajes');
+
+      if (elTodos) elTodos.textContent = countTodos;
+      if (elFlores) elFlores.textContent = countFlores;
+      if (elAnimales) elAnimales.textContent = countAnimales;
+      if (elPersonajes) elPersonajes.textContent = countPersonajes;
+
+      renderProducts();
+    }
+
+    function renderProducts() {
+      const featuredGrid = document.getElementById('featuredGrid');
+      const mainCatalogGrid = document.getElementById('mainCatalogGrid');
+      const featuredSection = document.getElementById('featuredSection');
+      const titleElem = document.getElementById('catalogSectionTitle');
+      const descElem = document.getElementById('catalogSectionDesc');
+
+      const items = (catalogProducts && catalogProducts.length > 0) ? catalogProducts : PRODUCTS;
+
+      const params = new URLSearchParams(window.location.search);
+      const searchQuery = params.get('q');
+      const catParam = params.get('cat');
+
+      if (catParam && ['flores', 'animales', 'personajes', 'todos'].includes(catParam)) {
+        activeCategory = catParam;
+        document.querySelectorAll('.category-item').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-cat') === catParam);
+        });
+      }
+
+      // 1. Si hay búsqueda por texto
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase().trim();
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = searchQuery;
+
+        const results = items.filter(p =>
+          p.title.toLowerCase().includes(q) ||
+          (p.categoryLabel && p.categoryLabel.toLowerCase().includes(q)) ||
+          (p.specs && p.specs.toLowerCase().includes(q))
+        );
+
+        if (featuredSection) featuredSection.style.display = 'none';
+        if (titleElem) titleElem.textContent = `Resultados para "${searchQuery}"`;
+        if (descElem) descElem.textContent = `Mostrando ${results.length} producto${results.length === 1 ? '' : 's'}`;
+
+        if (mainCatalogGrid) {
+          if (results.length > 0) {
+            mainCatalogGrid.innerHTML = results.map(p => createAccessibleProductCardHtml(p)).join('');
+          } else {
+            mainCatalogGrid.innerHTML = `
+              <div style="grid-column: 1/-1; padding: 48px 20px; text-align: center; color: var(--text-muted);">
+                <p style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">
+                  No se encontraron productos para "${searchQuery}".
+                </p>
+                <p style="font-size: 14px;">
+                  Intenta buscar por otro término o <a href="catalogo.html" style="color:var(--primary); font-weight:600;">ver todo el catálogo</a>.
+                </p>
+              </div>
+            `;
+          }
+        }
+        return;
+      }
+
+      // 2. Render normal según categoría
+      if (featuredGrid) {
+        let featured = items.filter(p => p.isFeatured);
+        if (featured.length === 0) {
+          featured = items.slice(0, 3);
+        } else {
+          featured = featured.slice(0, 3);
+        }
+        featuredGrid.innerHTML = featured.map(p => createAccessibleProductCardHtml(p)).join('');
+      }
+
+      let filtered = items;
+      if (activeCategory !== 'todos') {
+        filtered = items.filter(p => p.category === activeCategory);
+        if (featuredSection) featuredSection.style.display = 'none';
+        const catNames = { flores: 'Flores', animales: 'Animales', personajes: 'Personajes Animados' };
+        const catSubtitles = {
+          flores: 'Explora nuestra colección floral con detalles bordados en relieve.',
+          animales: 'Diseños artesanales inspirados en la naturaleza y fauna silvestre.',
+          personajes: 'Lleva contigo a tus personajes favoritos con puntadas hechas a mano.'
+        };
+        const label = catNames[activeCategory] || activeCategory;
+        if (titleElem) titleElem.textContent = `Colección ${label}`;
+        if (descElem) descElem.textContent = catSubtitles[activeCategory] || 'Descubre todos nuestros diseños.';
+      } else {
+        if (featuredSection) featuredSection.style.display = items.length > 0 ? 'block' : 'none';
+        if (titleElem) titleElem.textContent = 'Catálogo Completo';
+        if (descElem) descElem.textContent = 'Descubre todos nuestros diseños.';
+      }
+
+      if (mainCatalogGrid) {
+        if (filtered.length > 0) {
+          mainCatalogGrid.innerHTML = filtered.map(p => createAccessibleProductCardHtml(p)).join('');
+        } else {
+          mainCatalogGrid.innerHTML = `
+            <div style="grid-column: 1 / -1; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); text-align: center; color: var(--text-muted); font-size: 14px;">
+              La tabla <strong>productos</strong> en Supabase devolvió 0 registros (verifica que tenga filas y una política RLS <code>FOR SELECT USING (true)</code>).
+            </div>
+          `;
+        }
+      }
+    }
+
+    function applyCategoryFilter(cat, btn) {
+      activeCategory = cat;
+      document.querySelectorAll('.category-item').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      // Limpiar query param de búsqueda si existía
+      const url = new URL(window.location);
+      url.searchParams.delete('q');
+      url.searchParams.set('cat', cat);
+      window.history.pushState({}, '', url);
+
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) searchInput.value = '';
+
+      renderProducts();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCatalogProducts();
+    });
+  </script>
+</body>
+</html>
+

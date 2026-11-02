@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="img/icono.ico">
+  <title>Finalización de Pedido y Pago - ToteArt</title>  
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+       ========================================================================= -->
+  <header class="header-wrapper">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" aria-label="Ir a página de inicio de ToteArt">
+        <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="">
+        <span>ToteArt</span>
+      </a>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar tote bag bordado..." aria-label="Buscar tote bag bordado">
+      </div>
+
+      <nav class="header-nav" aria-label="Navegación principal">
+        <a href="lista.html" class="nav-link" id="navWishlistBtn">Mi Lista (<span id="wishlistCountNav">0</span>)</a>
+        <a href="pedidos.html" class="nav-link" id="navOrdersBtn">Mis Pedidos (<span id="ordersCountNav">0</span>)</a>
+        <a href="carrito.html" class="cart-btn" title="Ver Carrito de compras" aria-label="Ver carrito de compras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cartBadgeCount" aria-label="Artículos en carrito">0</span>
+        </a>
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="window.location.href='perfil.html'">
+          Mi Cuenta
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL: CHECKOUT & CONFIRMACIÓN
+       ========================================================================= -->
+  <main class="main-wrapper">
+    
+    <!-- 1. VISTA DE FORMULARIO DE CHECKOUT -->
+    <div id="checkoutFormView">
+      <a href="carrito.html" class="back-link" style="display:inline-block; text-decoration:none; margin-bottom:16px;">
+        ← Volver al carrito
+      </a>
+
+      <h1 class="page-title">Finalización de Pedido y Pago</h1>
+
+      <div class="checkout-layout">
+        <!-- Columna Izquierda: Métodos de Entrega y Pago -->
+        <div class="checkout-main-content">
+          <!-- 1. Método de Entrega -->
+          <section class="checkout-section-box" aria-labelledby="deliveryHeading">
+            <h2 class="checkout-section-title" id="deliveryHeading">1. SELECCIONA EL MÉTODO DE ENTREGA</h2>
+
+            <!-- Opción Retiro -->
+            <label class="radio-option-card" id="optionRetiroCard" onclick="selectDeliveryMethod('retiro')">
+              <input type="radio" name="deliveryMethod" id="radioRetiro" value="retiro" aria-describedby="descRetiro">
+              <div class="radio-option-content">
+                <div class="radio-option-title">
+                  <span>Retiro en Local Físico (Taller ToteArt)</span>
+                  <span class="delivery-price-text">GRATIS ($0.00)</span>
+                </div>
+                <p class="radio-option-desc" id="descRetiro">Av. Amazonas N34-120 y Gaspar de Villarroel. Listo en 24h laborables.</p>
+              </div>
+            </label>
+
+            <!-- Opción Envío a Domicilio -->
+            <label class="radio-option-card active" id="optionEnvioCard" onclick="selectDeliveryMethod('envio')">
+              <input type="radio" name="deliveryMethod" id="radioEnvio" value="envio" checked aria-describedby="descEnvio">
+              <div class="radio-option-content">
+                <div class="radio-option-title">
+                  <span>Envío a Domicilio a Todo el País</span>
+                  <span class="delivery-price-text">+ $5.00 USD</span>
+                </div>
+                <p class="radio-option-desc" id="descEnvio">Entrega puerta a puerta por mensajería nacional en 3 a 5 días hábiles.</p>
+              </div>
+            </label>
+
+            <!-- Formulario de Envío a Domicilio -->
+            <div id="shippingFormBlock">
+              <div class="checkout-address-grid">
+                <div class="form-group">
+                  <label class="form-label" for="shippingName">Nombres y apellidos *</label>
+                  <input type="text" class="form-control" id="shippingName" required placeholder="Nombre y apellido">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="shippingId">Cédula o RUC *</label>
+                  <input type="text" class="form-control" id="shippingId" inputmode="numeric" maxlength="13" required placeholder="1700000000" aria-describedby="shippingIdError">
+                  <p class="card-field-error" id="shippingIdError" role="alert" style="color: #DC2626;"></p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="shippingPhone">Teléfono celular *</label>
+                  <input type="tel" class="form-control" id="shippingPhone" inputmode="numeric" maxlength="10" placeholder="0900000000" aria-describedby="shippingPhoneError" required>
+                  <p class="card-field-error" id="shippingPhoneError" role="alert" style="color: #DC2626;"></p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="shippingStreet1">Calle principal *</label>
+                  <input type="text" class="form-control" id="shippingStreet1" required placeholder="Calle principal">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="shippingStreet2">Calle secundaria *</label>
+                  <input type="text" class="form-control" id="shippingStreet2" required placeholder="Calle transversal">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="shippingHouseNo">Número de casa / edificio (opcional)</label>
+                  <input type="text" class="form-control" id="shippingHouseNo" placeholder="Nro. de casa, edificio o depto. (opcional)">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="shippingRef">Referencia *</label>
+                  <input type="text" class="form-control" id="shippingRef" required placeholder="Punto de referencia cercano">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="selectProvincia">Provincia *</label>
+                  <select id="selectProvincia" class="form-control form-input" required></select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="selectCiudad">Ciudad *</label>
+                  <select id="selectCiudad" class="form-control form-input" required></select>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 2. Pago con Tarjeta -->
+          <section class="checkout-section-box" aria-labelledby="paymentHeading">
+            <h2 class="checkout-section-title" id="paymentHeading">2. PAGO CON TARJETA</h2>
+
+            <div class="card-payment-form" id="cardPaymentForm">
+              <!-- Mini logotipos de Visa, Mastercard y Diners Club con detección en tiempo real -->
+              <div id="cardBrandBadges" style="display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                <span id="badgeVisa" onclick="selectManualCardBrand('Visa')" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border:1px solid var(--border); border-radius:6px; font-size:12px; font-weight:700; color:#1A1F71; background:var(--surface); transition:all 0.15s;">
+                  Visa
+                </span>
+                <span id="badgeMastercard" onclick="selectManualCardBrand('Mastercard')" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border:1px solid var(--border); border-radius:6px; font-size:12px; font-weight:700; color:#EB001B; background:var(--surface); transition:all 0.15s;">
+                  <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#EB001B;"></span>
+                  <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#F79E1B; margin-left:-6px;"></span>
+                  Mastercard
+                </span>
+                <span id="badgeDiners" onclick="selectManualCardBrand('Diners Club')" style="cursor:pointer; display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border:1px solid var(--border); border-radius:6px; font-size:12px; font-weight:700; color:#0065A3; background:var(--surface); transition:all 0.15s;">
+                  <span style="display:inline-block; width:10px; height:10px; border-radius:50%; border:2px solid #0065A3; box-sizing:border-box;"></span>
+                  Diners Club
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cardNumberInput">Número de tarjeta</label>
+                <input type="text" class="form-control card-input-mono" id="cardNumberInput" name="cardNumber" inputmode="numeric" autocomplete="cc-number" maxlength="19" placeholder="0000 0000 0000 0000" aria-describedby="cardNumberError" required>
+                <p class="card-field-error" id="cardNumberError" role="alert"></p>
+              </div>
+
+              <div class="card-row-grid">
+                <div class="form-group">
+                  <label class="form-label" for="cardExpiryInput">Fecha de expiración</label>
+                  <input type="text" class="form-control card-input-mono" id="cardExpiryInput" name="cardExpiry" inputmode="numeric" autocomplete="cc-exp" maxlength="5" placeholder="MM/AA" aria-describedby="cardExpiryError" required>
+                  <p class="card-field-error" id="cardExpiryError" role="alert"></p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="cardCvv">CVV</label>
+                  <div class="card-cvv-wrap">
+                    <input type="password" class="form-control card-input-mono" id="cardCvv" inputmode="numeric" autocomplete="cc-csc" maxlength="4" placeholder="123" aria-describedby="cardCvvError" required>
+                    <svg class="card-cvv-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </div>
+                  <p class="card-field-error" id="cardCvvError" role="alert"></p>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cardHolder">Nombre en la tarjeta</label>
+                <input type="text" class="form-control" id="cardHolder" autocomplete="cc-name" placeholder="Nombre y apellido" aria-describedby="cardHolderError" required>
+                <p class="card-field-error" id="cardHolderError" role="alert"></p>
+              </div>
+
+              <div class="form-group" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="guardarTarjetaCheckbox" name="guardarTarjeta">
+                <label for="guardarTarjetaCheckbox" style="font-size: 13px; cursor: pointer; color: var(--text-muted, #555); margin: 0;">Guardar esta tarjeta para futuras compras</label>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Columna Derecha: Desglose del Pago -->
+        <aside class="order-summary-card" aria-label="Desglose del pago">
+          <h2 class="order-summary-title">Resumen</h2>
+
+          <div class="checkout-items-list" id="checkoutItemsList">
+            <!-- Renderizado dinámico vía JS -->
+          </div>
+
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <span id="checkoutSubtotalDisplay">$0.00 USD</span>
+          </div>
+
+          <div class="summary-row">
+            <span id="checkoutShippingLabel">Envío:</span>
+            <span id="checkoutShippingCost" class="delivery-price-text">$5.00 USD</span>
+          </div>
+
+          <div class="summary-row total">
+            <span>Total:</span>
+            <span id="checkoutTotalDisplay" style="color: #2D5A43; font-weight: 700;">$0.00 USD</span>
+          </div>
+
+          <button type="button" class="btn-checkout-primary" id="btnConfirmOrder" onclick="executeOrderConfirmation()" disabled>
+            Pagar $0.00 USD
+          </button>
+        </aside>
+      </div>
+    </div>
+
+    <!-- 2. VISTA CONFIRMACIÓN (ENVÍO A DOMICILIO) -->
+    <section id="view-orderSuccessDelivery" style="display:none;">
+      <div class="empty-state-card" style="max-width: 620px; text-align: left; padding: 36px; margin: 20px auto;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="width:60px; height:60px; border-radius:50%; background:#DEF7EC; display:inline-flex; align-items:center; justify-content:center;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#03543F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h2 style="font-size: 24px; font-weight: 700; margin-top: 14px;" id="successDeliveryGreeting">Muchas gracias por tu compra</h2>
+          <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px;">Estado del pedido: <strong style="color:#2D5A43;" id="successDeliveryStatus">Pagado</strong></p>
+          <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;" id="successDeliveryGuide"></p>
+        </div>
+
+        <div style="background:var(--canvas); border:1px solid var(--border); border-radius:8px; padding:18px; margin-bottom:24px;">
+          <h4 style="font-size:14px; font-weight:700; margin-bottom:10px;">Comprobante de Compra</h4>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Código de orden:</strong> <span id="successDeliveryCode" style="color:var(--text-main); font-weight:700;">#TAT-0000</span></p>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Fecha del pedido:</strong> <span id="successDeliveryDate">—</span></p>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;"><strong>Método de entrega:</strong> Envío a domicilio</p>
+          <div id="successDeliveryItemsList" style="border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:10px 0; margin-bottom:10px;"></div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:6px;" id="successDeliveryShipping"><strong>Costo de envío:</strong> $5.00 USD</p>
+          <p style="font-size:16px; font-weight:700; color:#2D5A43; margin-bottom:0;" id="successDeliveryTotal">Total pagado: $0.00 USD</p>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button type="button" class="btn-checkout-primary" onclick="window.location.href='pedidos.html'">
+            Ver estado de mi pedido
+          </button>
+          <button type="button" class="btn-pdp-wishlist" onclick="window.location.href='catalogo.html'" style="padding:10px;">
+            Volver a la tienda
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. VISTA CONFIRMACIÓN (RETIRO EN TALLER) -->
+    <section id="view-orderSuccessPickup" style="display:none;">
+      <div class="empty-state-card" style="max-width: 620px; text-align: left; padding: 36px; margin: 20px auto;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="width:60px; height:60px; border-radius:50%; background:#DEF7EC; display:inline-flex; align-items:center; justify-content:center;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#03543F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h2 style="font-size: 24px; font-weight: 700; margin-top: 14px;" id="successPickupGreeting">¡Pedido registrado con éxito!</h2>
+          <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px;" id="successPickupGuide">Método: Retiro en taller físico (Quito)</p>
+        </div>
+
+        <div style="background:var(--canvas); border:1px solid var(--border); border-radius:8px; padding:18px; margin-bottom:24px;">
+          <h4 style="font-size:14px; font-weight:700; margin-bottom:10px;">Comprobante de Compra</h4>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Código de orden:</strong> <span id="successPickupCode" style="color:var(--text-main); font-weight:700;">#TAT-0000</span></p>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Fecha del pedido:</strong> <span id="successPickupDate">—</span></p>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;"><strong>Método de entrega:</strong> Retiro en tienda</p>
+          <div id="successPickupItemsList" style="border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:10px 0; margin-bottom:10px;"></div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:6px;" id="successPickupShipping"><strong>Costo de envío:</strong> $0.00 USD</p>
+          <p style="font-size:16px; font-weight:700; color:#2D5A43; margin-bottom:0;" id="successPickupAmount">Total pagado: $0.00 USD</p>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button type="button" class="btn-checkout-primary" onclick="window.location.href='pedidos.html'">
+            Ver estado de mi pedido
+          </button>
+          <button type="button" class="btn-pdp-wishlist" onclick="window.location.href='catalogo.html'" style="padding:10px;">
+            Volver a la tienda
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let currentDeliveryMethod = 'envio';
+    let isPlacingOrder = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Proteger la vista: requiere autenticación
+      const user = getCurrentUser();
+      if (!user) {
+        window.location.href = 'login.html?redirect=checkout.html';
+        return;
+      }
+
+      // Si el carrito está vacío y no estamos en pantalla de éxito, redirigir
+      const cart = getStoredCart();
+      if (cart.length === 0) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.get('orderConfirmed')) {
+          window.location.href = 'index.html';
+          return;
+        }
+      }
+
+      initCardForm();
+      renderCheckoutSummary();
+    });
+
+    function renderCheckoutSummary() {
+      const cart = getStoredCart();
+      const subtotal = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+      const shippingCost = currentDeliveryMethod === 'envio' ? 5.00 : 0.00;
+      const total = subtotal + shippingCost;
+
+      const itemsListContainer = document.getElementById('checkoutItemsList');
+      if (itemsListContainer) {
+        itemsListContainer.innerHTML = cart.map(item => `
+          <div class="checkout-item-line">
+            <span>${item.product.title} (x${item.quantity})</span>
+            <span>$${(item.product.price * item.quantity).toFixed(2)}</span>
+          </div>
+        `).join('');
+      }
+
+      const subtotalDisplay = document.getElementById('checkoutSubtotalDisplay');
+      if (subtotalDisplay) subtotalDisplay.textContent = `$${subtotal.toFixed(2)} USD`;
+
+      const shippingLabel = document.getElementById('checkoutShippingLabel');
+      const shippingDisplay = document.getElementById('checkoutShippingCost');
+      if (shippingLabel && shippingDisplay) {
+        if (currentDeliveryMethod === 'envio') {
+          shippingLabel.textContent = 'Recargo por Envío a domicilio:';
+          shippingDisplay.textContent = '+ $5.00 USD';
+        } else {
+          shippingLabel.textContent = 'Retiro en Taller:';
+          shippingDisplay.textContent = 'GRATIS ($0.00)';
+        }
+      }
+
+      const totalDisplay = document.getElementById('checkoutTotalDisplay');
+      if (totalDisplay) totalDisplay.textContent = `$${total.toFixed(2)} USD`;
+
+      const btn = document.getElementById('btnConfirmOrder');
+      if (btn && !isPlacingOrder) {
+        btn.textContent = `Pagar $${total.toFixed(2)} USD`;
+      }
+    }
+
+    function selectDeliveryMethod(method) {
+      currentDeliveryMethod = method;
+
+      const radioRetiro = document.getElementById('radioRetiro');
+      if (radioRetiro) radioRetiro.checked = (method === 'retiro');
+      const radioEnvio = document.getElementById('radioEnvio');
+      if (radioEnvio) radioEnvio.checked = (method === 'envio');
+
+      const cardRetiro = document.getElementById('optionRetiroCard');
+      if (cardRetiro) cardRetiro.classList.toggle('active', method === 'retiro');
+      const cardEnvio = document.getElementById('optionEnvioCard');
+      if (cardEnvio) cardEnvio.classList.toggle('active', method === 'envio');
+
+      const shippingForm = document.getElementById('shippingFormBlock');
+      if (shippingForm) shippingForm.style.display = (method === 'envio') ? 'block' : 'none';
+
+      renderCheckoutSummary();
+      validateCardForm(false);
+    }
+
+    /* ------------------------------------------------------------------
+       FORMULARIO DE TARJETA + DETECCIÓN DE MARCA + VALIDACIÓN (LUHN)
+       ------------------------------------------------------------------ */
+    let currentCardBrand = '';
+    let manualSelectedBrand = '';
+
+    function highlightBrandBadge(brand, hasInput) {
+      const bVisa = document.getElementById('badgeVisa');
+      const bMc = document.getElementById('badgeMastercard');
+      const bDiners = document.getElementById('badgeDiners');
+
+      [bVisa, bMc, bDiners].forEach(el => {
+        if (el) {
+          el.style.borderColor = 'var(--border)';
+          el.style.boxShadow = 'none';
+          el.style.opacity = (hasInput || brand) ? '0.45' : '1';
+        }
+      });
+
+      const target = brand === 'Visa' ? bVisa
+        : brand === 'Mastercard' ? bMc
+        : brand === 'Diners Club' ? bDiners
+        : null;
+
+      if (target) {
+        target.style.borderColor = '#2D5A43';
+        target.style.boxShadow = '0 0 0 2px rgba(45, 90, 67, 0.2)';
+        target.style.opacity = '1';
+      }
+    }
+
+    function selectManualCardBrand(brand) {
+      manualSelectedBrand = brand;
+      currentCardBrand = brand;
+      highlightBrandBadge(brand, true);
+    }
+
+    function detectCardBrand(digits) {
+      const clean = String(digits || '').replace(/\D/g, '');
+      let brand = '';
+      const prefix4 = parseInt(clean.slice(0, 4), 10);
+      const prefix3 = parseInt(clean.slice(0, 3), 10);
+      const prefix2 = parseInt(clean.slice(0, 2), 10);
+
+      // Visa: inicia con 4 | Mastercard: 51-55 o 2221-2720 | Diners Club: 36, 38 o 300-305
+      if (/^4/.test(clean)) {
+        brand = 'Visa';
+      } else if ((prefix2 >= 51 && prefix2 <= 55) || (prefix4 >= 2221 && prefix4 <= 2720)) {
+        brand = 'Mastercard';
+      } else if (prefix2 === 36 || prefix2 === 38 || (prefix3 >= 300 && prefix3 <= 305)) {
+        brand = 'Diners Club';
+      } else if (manualSelectedBrand) {
+        brand = manualSelectedBrand;
+      }
+
+      highlightBrandBadge(brand, clean.length > 0);
+      currentCardBrand = brand;
+      return brand;
+    }
+
+    function isShippingFormValid() {
+      if (currentDeliveryMethod !== 'envio') return true;
+      const nameEl = document.getElementById('shippingName');
+      const idEl = document.getElementById('shippingId');
+      const phoneEl = document.getElementById('shippingPhone');
+      const nameLetters = (nameEl ? nameEl.value : '').replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '');
+      const idVal = (idEl ? idEl.value : '').trim();
+      const phoneVal = (phoneEl ? phoneEl.value.replace(/\D/g, '') : '');
+      const isIdValid = typeof validarIdentificacionEcuador === 'function'
+        ? validarIdentificacionEcuador(idVal)
+        : (idVal.length === 10 || idVal.length === 13);
+      const isPhoneValid = !phoneEl || /^09\d{8}$/.test(phoneVal);
+
+      const requiredIds = ['shippingStreet1', 'shippingStreet2', 'selectProvincia', 'selectCiudad', 'shippingRef'];
+      const allFilled = requiredIds.every(id => {
+        const el = document.getElementById(id);
+        return el && el.value.trim().length > 0;
+      });
+      return nameLetters.length >= 2 && isIdValid && isPhoneValid && allFilled;
+    }
+
+    function initCardForm() {
+      const numberInput = document.getElementById('cardNumberInput') || document.getElementById('cardNumber');
+      const holderInput = document.getElementById('cardHolder');
+      const expiryInput = document.getElementById('cardExpiryInput') || document.getElementById('cardExpiry');
+      const cvvInput = document.getElementById('cardCvv');
+      const shippingIdInput = document.getElementById('shippingId');
+      const shippingNameInput = document.getElementById('shippingName');
+      const shippingPhoneInput = document.getElementById('shippingPhone');
+
+      if (typeof inicializarSelectoresUbicacion === 'function') {
+        inicializarSelectoresUbicacion();
+      }
+
+      // Cédula / RUC Ecuador (solo números, máx 13 dígitos, algoritmo oficial)
+      if (shippingIdInput) {
+        const validateCedulaField = (forceShow) => {
+          shippingIdInput.value = shippingIdInput.value.replace(/\D/g, '').slice(0, 13);
+          const val = shippingIdInput.value;
+          const valid = typeof validarIdentificacionEcuador === 'function'
+            ? validarIdentificacionEcuador(val)
+            : (val.length === 10 || val.length === 13);
+          const showErr = !valid && (forceShow || val.length > 0);
+          setFieldError(
+            'shippingId',
+            showErr ? 'Ingrese una cédula (10 dígitos) o RUC (13 dígitos) válido de Ecuador' : '',
+            showErr
+          );
+          shippingIdInput.style.borderColor = showErr ? '#DC2626' : '';
+          validateCardForm(false);
+        };
+        shippingIdInput.addEventListener('input', () => validateCedulaField(false));
+        shippingIdInput.addEventListener('blur', () => validateCedulaField(true));
+      }
+
+      // Teléfono celular: 10 dígitos (09...)
+      if (shippingPhoneInput) {
+        const validatePhoneField = (forceShow) => {
+          shippingPhoneInput.value = shippingPhoneInput.value.replace(/\D/g, '').slice(0, 10);
+          const val = shippingPhoneInput.value;
+          const valid = /^09\d{8}$/.test(val);
+          const showErr = !valid && (forceShow || val.length > 0);
+          setFieldError(
+            'shippingPhone',
+            showErr ? 'Ingrese un celular válido de 10 dígitos (ej. 0991234567)' : '',
+            showErr
+          );
+          shippingPhoneInput.style.borderColor = showErr ? '#DC2626' : '';
+          validateCardForm(false);
+        };
+        shippingPhoneInput.addEventListener('input', () => validatePhoneField(false));
+        shippingPhoneInput.addEventListener('blur', () => validatePhoneField(true));
+      }
+
+      if (shippingNameInput) {
+        shippingNameInput.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+          validateCardForm(false);
+        });
+      }
+
+      // Número de tarjeta: limpia cualquier caracter no numérico y agrupa cada 4 dígitos
+      if (numberInput) {
+        numberInput.addEventListener('input', (e) => {
+          const rawDigits = e.target.value.replace(/\D/g, '').slice(0, 16);
+          e.target.value = rawDigits.replace(/(.{4})/g, '$1 ').trim();
+          detectCardBrand(rawDigits);
+          validateCardForm(true, 'cardNumber');
+        });
+      }
+
+      // Titular: solo letras y espacios
+      if (holderInput) {
+        holderInput.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+          validateCardForm(true, 'cardHolder');
+        });
+      }
+
+      // Expiración MM/AA: solo números y formato automático con '/'
+      if (expiryInput) {
+        expiryInput.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/\D/g, '').replace(/^(\d{2})/, '$1/').slice(0, 5);
+          validateCardForm(true, 'cardExpiry');
+        });
+      }
+
+      // CVV: números con longitud de 3 o 4 dígitos
+      if (cvvInput) {
+        cvvInput.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+          validateCardForm(true, 'cardCvv');
+        });
+      }
+
+      [numberInput, holderInput, expiryInput, cvvInput].filter(Boolean).forEach(el => {
+        el.addEventListener('blur', () => validateCardForm(true, el.id));
+      });
+
+      ['shippingName', 'shippingId', 'shippingPhone', 'shippingStreet1', 'shippingStreet2', 'shippingHouseNo', 'shippingRef', 'selectProvincia', 'selectCiudad'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', () => validateCardForm(false));
+          el.addEventListener('change', () => validateCardForm(false));
+        }
+      });
+    }
+
+    function isExpiryValid(value) {
+      const m = /^(\d{2})\/(\d{2})$/.exec(value);
+      if (!m) return false;
+      const month = parseInt(m[1], 10);
+      const year = 2000 + parseInt(m[2], 10);
+      if (month < 1 || month > 12) return false;
+      const now = new Date();
+      const endOfMonth = new Date(year, month, 0, 23, 59, 59);
+      return endOfMonth >= now;
+    }
+
+    function setFieldError(inputId, message, show) {
+      const input = document.getElementById(inputId) || document.getElementById(inputId + 'Input');
+      const error = document.getElementById(inputId + 'Error') || document.getElementById(inputId.replace('Input', '') + 'Error');
+      if (!input || !error) return;
+      const hasError = Boolean(message) && show;
+      error.textContent = hasError ? message : '';
+      input.classList.toggle('input-invalid', hasError);
+      input.setAttribute('aria-invalid', hasError ? 'true' : 'false');
+    }
+
+    function validateCardForm(showErrors, onlyFieldId) {
+      const numberInput = document.getElementById('cardNumberInput') || document.getElementById('cardNumber');
+      const holderInput = document.getElementById('cardHolder');
+      const expiryInput = document.getElementById('cardExpiryInput') || document.getElementById('cardExpiry');
+      const cvvInput = document.getElementById('cardCvv');
+
+      const number = numberInput ? numberInput.value : '';
+      const holder = holderInput ? holderInput.value.trim() : '';
+      const expiry = expiryInput ? expiryInput.value : '';
+      const cvv = cvvInput ? cvvInput.value : '';
+      const digits = number.replace(/\D/g, '');
+
+      const holderLetters = holder.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '');
+      const isDiners = /^(36|38|30[0-5])/.test(digits);
+      const validLength = isDiners ? (digits.length === 14 || digits.length === 16) : (digits.length === 16);
+      const errors = {
+        cardNumber: (!validLength || !isValidLuhn(digits)) ? 'Número inválido' : '',
+        cardExpiry: !isExpiryValid(expiry) ? 'Fecha inválida' : '',
+        cardCvv: !/^\d{3,4}$/.test(cvv) ? 'CVV inválido (3 o 4 dígitos)' : '',
+        cardHolder: holderLetters.length < 5 ? 'Nombre inválido (mínimo 5 letras)' : ''
+      };
+
+      const values = {
+        cardNumber: digits,
+        cardExpiry: expiry,
+        cardCvv: cvv,
+        cardHolder: holder
+      };
+
+      Object.keys(errors).forEach(id => {
+        if (showErrors === 'all') {
+          setFieldError(id, errors[id], true);
+        } else if (showErrors && (id === onlyFieldId || id + 'Input' === onlyFieldId)) {
+          setFieldError(id, errors[id], values[id].length > 0);
+        } else if (!errors[id]) {
+          setFieldError(id, '', false);
+        }
+      });
+
+      const isCardValid = Object.values(errors).every(e => !e);
+      const isShippingOk = isShippingFormValid();
+      const isValid = isCardValid && isShippingOk;
+      const btn = document.getElementById('btnConfirmOrder');
+      if (btn) btn.disabled = !isValid || isPlacingOrder;
+      return isValid;
+    }
+
+    /* ------------------------------------------------------------------
+       CONFIRMACIÓN DE PEDIDO
+       ------------------------------------------------------------------ */
+    function buildShippingAddress() {
+      if (currentDeliveryMethod !== 'envio') {
+        return 'Retiro en Taller ToteArt – Av. Amazonas N34-120 y Gaspar de Villarroel, Quito';
+      }
+      const v = id => {
+        const el = document.getElementById(id);
+        return el ? (el.value || '').trim() : '';
+      };
+      return `${v('shippingStreet1')} ${v('shippingHouseNo')} y ${v('shippingStreet2')}, ${v('selectCiudad')}, ${v('selectProvincia')} (Ref: ${v('shippingRef')})`;
+    }
+
+    async function generateCardTokenHash(digits) {
+      const payload = `tok_${digits.slice(-4)}_${Date.now()}`;
+      if (window.crypto && window.crypto.subtle) {
+        try {
+          const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
+          return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch (e) {}
+      }
+      let hash = 0;
+      for (let i = 0; i < payload.length; i++) {
+        hash = ((hash << 5) - hash) + payload.charCodeAt(i);
+        hash |= 0;
+      }
+      return 'sha256_' + Math.abs(hash).toString(16).padStart(16, '0');
+    }
+
+    async function executeOrderConfirmation() {
+      if (isPlacingOrder) return;
+      // Validación Luhn obligatoria antes de procesar
+      if (!validateCardForm('all')) return;
+
+      const cart = getStoredCart();
+      if (cart.length === 0) return;
+
+      const btn = document.getElementById('btnConfirmOrder');
+      isPlacingOrder = true;
+      btn.disabled = true;
+      btn.textContent = 'Procesando pago...';
+
+      // 1. Verificación Previa de Stock y Rechazo Inmediato (Supabase en tiempo real)
+      const cartItems = cart.map(raw => ({
+        id: raw.id != null ? raw.id : (raw.product ? raw.product.id : null),
+        title: raw.title || (raw.product ? raw.product.title : ''),
+        nombre: raw.nombre || (raw.product ? (raw.product.nombre || raw.product.title) : ''),
+        price: Number(raw.price != null ? raw.price : (raw.product ? raw.product.price : 0)),
+        quantity: Number(raw.quantity != null ? raw.quantity : raw.qty) || 1,
+        product: raw.product || raw
+      }));
+
+      if (window.supabaseClient) {
+        const productIds = cartItems.map(item => item.id);
+        let { data: dbProducts, error: stockCheckErr } = await window.supabaseClient
+          .from('productos')
+          .select('id_producto, titulo, nombre, stock')
+          .in('id_producto', productIds);
+
+        if (stockCheckErr) {
+          const fallbackStock = await window.supabaseClient
+            .from('productos')
+            .select('*')
+            .in('id_producto', productIds);
+          dbProducts = fallbackStock.data;
+          stockCheckErr = fallbackStock.error;
+        }
+
+        if (!stockCheckErr && Array.isArray(dbProducts)) {
+          for (const item of cartItems) {
+            const prod = dbProducts.find(p => String(p.id_producto) === String(item.id));
+            const availableStock = prod ? Number(prod.stock) : 0;
+            
+            if (availableStock <= 0) {
+              alert(`El producto "${item.title || item.nombre}" se encuentra agotado (Stock: 0). Elimínalo del carrito para continuar.`);
+              isPlacingOrder = false;
+              btn.disabled = false;
+              btn.textContent = 'Confirmar Pedido';
+              return false;
+            }
+            if (availableStock < item.quantity) {
+              alert(`Solo quedan ${availableStock} unidades disponibles de "${item.title || item.nombre}". Por favor ajusta la cantidad.`);
+              isPlacingOrder = false;
+              btn.disabled = false;
+              btn.textContent = 'Confirmar Pedido';
+              return false;
+            }
+          }
+        }
+      }
+
+      const subtotal = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+      const shippingCost = currentDeliveryMethod === 'envio' ? 5.00 : 0.00;
+      const total = subtotal + shippingCost;
+      const user = getCurrentUser() || {};
+
+      // SANITIZACIÓN ABSOLUTA DE TARJETAS EN CHECKOUT (Directiva de seguridad)
+      // Prohibición: Bajo ninguna circunstancia se debe enviar el número de tarjeta completo (16 dígitos) ni el CVV a la base de datos de Supabase.
+      const cardInputEl = document.getElementById('cardNumberInput') || document.getElementById('cardNumber');
+      const rawCardNumber = cardInputEl ? cardInputEl.value.replace(/\s+/g, '') : '';
+      const lastFour = rawCardNumber.slice(-4); // ÚNICAMENTE los últimos 4 dígitos
+
+      // Validar CVV y destruirlo inmediatamente después (nunca se almacena)
+      const cvvInput = document.getElementById('cardCvv');
+      const cvvVal = cvvInput ? cvvInput.value.replace(/\D/g, '') : '';
+      if (cvvVal.length < 3 || cvvVal.length > 4) {
+        alert("El código CVV debe tener 3 o 4 dígitos.");
+        isPlacingOrder = false;
+        btn.disabled = false;
+        btn.textContent = `Pagar $${total.toFixed(2)} USD`;
+        return;
+      }
+      if (cvvInput) cvvInput.value = ''; // Destruido inmediatamente (nunca se almacena)
+
+      // Generar token anónimo de transacción
+      const transaccionToken = 'TOK-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).substring(2)));
+
+      // Inserción opcional en TARJETAS_GUARDADAS (si el usuario marcó la casilla)
+      const guardarTarjetaCheckbox = document.getElementById('guardarTarjetaCheckbox');
+      const clienteId = await getActiveClientId();
+      if (guardarTarjetaCheckbox && guardarTarjetaCheckbox.checked && window.supabaseClient) {
+        const expiryInputEl = document.getElementById('cardExpiryInput') || document.getElementById('cardExpiry');
+        const tarjetaPayload = {
+          id_cliente: clienteId,
+          ultimos_cuatro: lastFour,
+          marca: rawCardNumber.startsWith('4') ? 'Visa' : 'Mastercard',
+          expiracion: expiryInputEl ? expiryInputEl.value.trim() : '',
+          token_tarjeta: 'CARD-HASH-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : ('CARD-' + Date.now()))
+        };
+        try {
+          await window.supabaseClient.from('tarjetas_guardadas').insert([tarjetaPayload]);
+        } catch (errCard) {
+          console.warn('[Supabase] Error al insertar en tarjetas_guardadas:', errCard);
+        }
+      }
+
+      // Destruir número de tarjeta en el DOM de inmediato
+      if (cardInputEl) cardInputEl.value = '';
+
+      const esDomicilio = currentDeliveryMethod === 'envio';
+      const provSelect = document.getElementById('selectProvincia');
+      const citySelect = document.getElementById('selectCiudad');
+      const provinciaEnvio = esDomicilio && provSelect ? provSelect.value : 'Pichincha';
+      const ciudadEnvio = esDomicilio && citySelect ? citySelect.value : 'Quito';
+      const callePrincipal = esDomicilio ? (document.getElementById('shippingStreet1').value || '').trim() : '';
+      const calleSecundaria = esDomicilio ? (document.getElementById('shippingStreet2').value || '').trim() : '';
+      const guiaServientrega = esDomicilio
+        ? ('90' + Math.floor(10000000 + Math.random() * 90000000).toString())
+        : null;
+
+      const sessionUser = JSON.parse(localStorage.getItem('toteart_user') || '{}');
+      const activeClientId = sessionUser.id_cliente || sessionUser.id_usuario || clienteId || null;
+      const shippingRefEl = document.getElementById('shippingRef') || document.getElementById('shippingPostal');
+      const referenciaEnvio = esDomicilio && shippingRefEl ? (shippingRefEl.value || '').trim() : '';
+      const telefonoContacto = user.telefono || sessionUser.telefono || '0999999999';
+
+      const newOrder = {
+        code: generateOrderCode(),
+        codigo_orden: '',
+        idCliente: activeClientId,
+        id_cliente: activeClientId,
+        fechaPedido: new Date().toISOString(),
+        fecha_pedido: new Date().toISOString(),
+        estado: 'PAGADO',
+        guia: guiaServientrega,
+        guia_servientrega: guiaServientrega,
+        trackingNumber: guiaServientrega,
+        deliveryMethod: esDomicilio ? 'DOMICILIO' : 'RETIRO_TIENDA',
+        metodo_entrega: esDomicilio ? 'DOMICILIO' : 'RETIRO_TIENDA',
+        calle_principal: callePrincipal || 'No especificada',
+        calle_secundaria: calleSecundaria,
+        referencia: referenciaEnvio,
+        provincia: provinciaEnvio,
+        ciudad: ciudadEnvio,
+        shippingAddress: {
+          street1: callePrincipal || 'No especificada',
+          street2: calleSecundaria,
+          ref: referenciaEnvio,
+          city: ciudadEnvio || 'Quito',
+          phone: telefonoContacto
+        },
+        customerPhone: telefonoContacto,
+        customerEmail: user.email || sessionUser.email || '',
+        email: user.email || sessionUser.email || '',
+        paymentMethod: 'TARJETA',
+        cardBrand: currentCardBrand || (rawCardNumber.startsWith('4') ? 'Visa' : 'Mastercard'),
+        cardLast4: lastFour,
+        ultimos_cuatro: lastFour,
+        transaccion_token: transaccionToken,
+        transaccionToken: transaccionToken,
+        cardTokenHash: transaccionToken,
+        address: esDomicilio ? buildShippingAddress() : 'Retiro en taller físico (Quito)',
+        customerName: user.nombres || user.nombre || '',
+        subtotal: Number(subtotal.toFixed(2)),
+        shippingCost: shippingCost,
+        costo_envio: shippingCost,
+        total: Number(total.toFixed(2)),
+        items: cart.map(item => ({
+          id: item.product.id,
+          id_producto: item.product.id,
+          title: item.product.title,
+          nombre: item.product.nombre || item.product.title,
+          nombre_producto: item.product.title,
+          price: Number(item.product.price),
+          precio_unitario: Number(item.product.price),
+          quantity: Number(item.quantity),
+          cantidad: Number(item.quantity),
+          subtotal: Number((item.product.price * item.quantity).toFixed(2)),
+          product: item.product
+        }))
+      };
+      newOrder.codigo_orden = newOrder.code;
+
+      // 1. Descontar stock EXACTAMENTE una sola vez por cada elemento del carrito y sincronizar en memoria
+      const localStockMap = (typeof getLocalStockMap === 'function') ? getLocalStockMap() : {};
+      for (const rawItem of cart) {
+        const item = {
+          id: rawItem.id != null ? rawItem.id : (rawItem.product ? rawItem.product.id : null),
+          qty: Number(rawItem.qty != null ? rawItem.qty : rawItem.quantity) || 1
+        };
+        if (window.supabaseClient && item.id) {
+          await window.supabaseClient.rpc('fn_descontar_stock', {
+            p_id_producto: item.id,
+            p_cantidad: Number(item.qty)
+          });
+        }
+        const prevStock = typeof localStockMap[item.id] === 'number'
+          ? localStockMap[item.id]
+          : (typeof getAvailableStock === 'function' ? getAvailableStock(item.id) : 0);
+        const nextStock = Math.max(0, prevStock - Number(item.qty));
+        localStockMap[item.id] = nextStock;
+        if (Array.isArray(window.PRODUCTS)) {
+          const pObj = window.PRODUCTS.find(p => String(p.id) === String(item.id));
+          if (pObj) {
+            pObj.stock = Math.max(0, (Number(pObj.stock) || prevStock) - Number(item.qty));
+            localStockMap[item.id] = pObj.stock;
+          }
+        }
+      }
+      if (typeof saveLocalStockMap === 'function') {
+        saveLocalStockMap(localStockMap);
+      }
+      if (typeof renderCatalog === 'function') {
+        renderCatalog();
+      }
+
+      // 2. Guardar pedido + detalle + pago tokenizado (se agrega al historial, nunca sobrescribe)
+      await saveOrderToDatabase(newOrder);
+      if (typeof orderHistory !== 'undefined' && Array.isArray(orderHistory)) {
+        orderHistory = getStoredOrders();
+      }
+
+      // 3. Correo 1 — Comprobante / Recibo (await, antes de mostrar la confirmación)
+      const emailResult = await sendOrderConfirmationEmail(newOrder, user);
+
+      // 4. Correo 2 — Notificación Servientrega encadenada (sin setTimeout), solo envío a domicilio
+      if (esDomicilio) {
+        try {
+          newOrder.dispatchEmailSent = true;
+          await sendOrderDispatchEmail(newOrder, user, newOrder.guia_servientrega);
+        } catch (mailErr) {
+          console.warn('Aviso: No se pudo enviar el correo de Servientrega', mailErr);
+        }
+        // Solo avance visual de estado del pedido (el correo ya fue enviado)
+        scheduleOrderStatusProgression(newOrder, null, user);
+      }
+
+      // Vaciar carrito
+      saveCart([]);
+      updateBadges();
+
+      document.getElementById('checkoutFormView').style.display = 'none';
+      const displayName = user.nombres || user.nombre || '';
+      const fechaFormateada = new Date(newOrder.fechaPedido).toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const itemsReceiptHtml = newOrder.items.map(item => `
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:4px 0;">
+          <span style="color:var(--text-main); font-weight:600;">${item.product.title} (x${item.quantity})</span>
+          <span style="color:#2D5A43; font-weight:700;">$${(item.product.price * item.quantity).toFixed(2)} USD</span>
+        </div>
+      `).join('');
+
+      const orderCode = String(newOrder.code || '').replace(/^#+/, '');
+
+      if (esDomicilio) {
+        document.getElementById('view-orderSuccessDelivery').style.display = 'block';
+        document.getElementById('successDeliveryGreeting').textContent = '¡Pedido registrado con éxito!';
+        document.getElementById('successDeliveryCode').textContent = `#${orderCode}`;
+        document.getElementById('successDeliveryDate').textContent = fechaFormateada;
+        document.getElementById('successDeliveryItemsList').innerHTML = itemsReceiptHtml;
+        document.getElementById('successDeliveryShipping').innerHTML = `<strong>Costo de envío:</strong> $${shippingCost.toFixed(2)} USD`;
+        document.getElementById('successDeliveryTotal').textContent = `Total pagado: $${total.toFixed(2)} USD`;
+        const guideEl = document.getElementById('successDeliveryGuide');
+        if (guideEl) {
+          guideEl.innerHTML = `Tu compra ha sido procesada con el código <strong style="color:var(--text-main);">#${orderCode}</strong>. Te hemos enviado el comprobante a tu correo y en breve recibirás la notificación con tu guía de rastreo oficial de Servientrega.`;
+        }
+      } else {
+        document.getElementById('view-orderSuccessPickup').style.display = 'block';
+        document.getElementById('successPickupGreeting').textContent = '¡Pedido verificado y pagado!';
+        document.getElementById('successPickupCode').textContent = `#${orderCode}`;
+        document.getElementById('successPickupDate').textContent = fechaFormateada;
+        document.getElementById('successPickupItemsList').innerHTML = itemsReceiptHtml;
+        document.getElementById('successPickupShipping').innerHTML = `<strong>Costo de envío:</strong> $0.00 USD`;
+        document.getElementById('successPickupAmount').textContent = `Total pagado: $${total.toFixed(2)} USD`;
+        const pickupGuideEl = document.getElementById('successPickupGuide');
+        if (pickupGuideEl) {
+          pickupGuideEl.innerHTML = `Tu orden ha sido confirmada con el código <strong style="color:var(--text-main);">#${orderCode}</strong>.<br>Puedes retirar tu pedido presentando este código en nuestro local.<br><strong>Dirección:</strong> Av. Amazonas N34-120 y Gaspar de Villarroel, Quito<br><strong>Horario de atención:</strong> Lunes a Sábado de 10:00 a 18:00`;
+        }
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

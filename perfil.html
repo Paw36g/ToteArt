@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="img/icono.ico">
+  <title>Mi Perfil - ToteArt</title>  
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+       ========================================================================= -->
+  <header class="header-wrapper">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" aria-label="Ir a página de inicio de ToteArt">
+        <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="">
+        <span>ToteArt</span>
+      </a>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar tote bag bordado..." aria-label="Buscar tote bag bordado">
+      </div>
+
+      <nav class="header-nav" aria-label="Navegación principal">
+        <a href="lista.html" class="nav-link" id="navWishlistBtn">
+          Mi Lista (<span id="wishlistCountNav">0</span>)
+        </a>
+        <a href="pedidos.html" class="nav-link" id="navOrdersBtn">Mis Pedidos (<span id="ordersCountNav">0</span>)</a>
+        <a href="carrito.html" class="cart-btn" title="Ver Carrito de compras" aria-label="Ver carrito de compras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cartBadgeCount" aria-label="Artículos en carrito">0</span>
+        </a>
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="window.location.href='perfil.html'">
+          Mi Cuenta
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL: PERFIL DE USUARIO ESTILO APP MÓVIL
+       ========================================================================= -->
+  <main class="main-wrapper" style="max-width: 480px; margin: 30px auto; padding: 0 16px;">
+    
+    <!-- Alertas de estado -->
+    <div id="profileAlert" role="alert" style="display:none; padding:12px 18px; background:#DEF7EC; color:#03543F; border: 1px solid #31C48D; border-radius:var(--radius-sm); font-size:14px; margin-bottom:20px; font-weight:600; text-align:center;">
+      ✓ Datos actualizados correctamente.
+    </div>
+
+    <!-- 1. VISTA PRINCIPAL DEL PERFIL (ESTILO APP MÓVIL) -->
+    <div id="viewProfileMain" class="auth-card" style="text-align: center; padding: 32px 24px;">
+      
+      <!-- Avatar circular superior con iniciales -->
+      <div id="profileAvatarCircle" style="width: 88px; height: 88px; border-radius: 50%; background-color: var(--primary); color: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; margin: 0 auto 16px auto; box-shadow: 0 4px 12px rgba(61, 100, 78, 0.25); letter-spacing: 1px;">
+        —
+      </div>
+
+      <!-- Nombre completo del usuario -->
+      <h1 id="profileDisplayName" style="font-size: 22px; font-weight: 700; color: var(--brand); margin-bottom: 4px;">
+      </h1>
+      <p id="profileDisplayEmail" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+      </p>
+
+      <!-- Botón destacado Editar Perfil -->
+      <button type="button" class="btn-checkout-primary" style="width: 100%; margin-bottom: 24px; padding: 12px;" onclick="showEditProfileView()">
+        Editar Perfil
+      </button>
+
+      <!-- Menú de lista vertical simple -->
+      <div style="border-top: 1px solid var(--border); padding-top: 8px; text-align: left;">
+        
+        <!-- Opción Mi Lista -->
+        <a href="lista.html" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 8px; text-decoration: none; color: var(--text-main); font-weight: 600; font-size: 14px; border-bottom: 1px solid var(--border); transition: background 0.15s;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--brand);">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span>Mi lista</span>
+          </div>
+          <span style="color: var(--text-muted); font-size: 18px;">›</span>
+        </a>
+
+        <!-- Opción Mis Pedidos -->
+        <a href="pedidos.html" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 8px; text-decoration: none; color: var(--text-main); font-weight: 600; font-size: 14px; border-bottom: 1px solid var(--border); transition: background 0.15s;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            <span>Mis pedidos</span>
+          </div>
+          <span style="color: var(--text-muted); font-size: 18px;">›</span>
+        </a>
+
+        <!-- Opción Cerrar Sesión -->
+        <button type="button" onclick="handleLogout()" style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 8px; background: none; border: none; cursor: pointer; color: var(--danger); font-weight: 600; font-size: 14px; text-align: left;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Cerrar sesión</span>
+          </div>
+          <span style="color: var(--danger); font-size: 18px;">›</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- 2. VISTA DE EDITAR PERFIL -->
+    <div id="viewEditProfile" class="auth-card" style="display: none; padding: 28px 24px;">
+      <button type="button" class="back-link" style="display:inline-block; border:none; background:none; padding:0; margin-bottom:16px; cursor:pointer;" onclick="hideEditProfileView()">
+        ← Volver al perfil
+      </button>
+
+      <h2 class="auth-card-title" style="font-size: 20px; margin-bottom: 18px;">Editar Perfil</h2>
+
+      <form id="editProfileForm" onsubmit="handleSaveProfile(event)">
+        <!-- Nombres -->
+        <div class="form-group">
+          <label class="form-label" for="editFirstName">Nombres *</label>
+          <input type="text" class="form-control" id="editFirstName" name="nombres" required placeholder="Tus nombres" autocomplete="given-name">
+        </div>
+
+        <!-- Apellidos -->
+        <div class="form-group">
+          <label class="form-label" for="editLastName">Apellidos *</label>
+          <input type="text" class="form-control" id="editLastName" name="apellidos" required placeholder="Tus apellidos" autocomplete="family-name">
+        </div>
+
+        <!-- Provincia y Ciudad -->
+        <div class="form-group">
+          <label class="form-label" for="selectProvincia">Provincia *</label>
+          <select id="selectProvincia" class="form-control form-input" required></select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="selectCiudad">Ciudad *</label>
+          <select id="selectCiudad" class="form-control form-input" required></select>
+        </div>
+
+        <!-- Correo electrónico -->
+        <div class="form-group">
+          <label class="form-label" for="editEmail">Correo electrónico *</label>
+          <input type="email" class="form-control" id="editEmail" name="email" required placeholder="tu@correo.com" autocomplete="email">
+        </div>
+
+        <!-- Nueva contraseña (opcional) -->
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label class="form-label" for="editPassword">Nueva contraseña (opcional)</label>
+          <input type="password" class="form-control" id="editPassword" name="password" minlength="6" placeholder="Dejar en blanco para mantener la actual" autocomplete="new-password">
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <button type="button" class="btn-pdp-wishlist" style="flex: 1; padding: 12px;" onclick="hideEditProfileView()">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-checkout-primary" id="btnSaveProfileChanges" style="flex: 1; padding: 12px;">
+            Guardar cambios
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </main>
+
+  <!-- Modal de Confirmación para Cerrar Sesión -->
+  <div class="modal-overlay" id="confirmLogoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutModalTitle">
+    <div class="modal-card">
+      <h3 class="modal-title" id="logoutModalTitle" style="margin-bottom: 20px;">¿Deseas cerrar sesión?</h3>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal-cancel" id="btnLogoutCancel" onclick="closeLogoutModal()">Cancelar</button>
+        <button type="button" class="btn-modal-confirm" id="btnLogoutConfirm" onclick="confirmLogout()">Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function getInitials(nombres, apellidos, fullName) {
+      const n = String(nombres || '').trim();
+      const a = String(apellidos || '').trim();
+      if (n && a) return (n[0] + a[0]).toUpperCase();
+      const base = (n || String(fullName || '').trim());
+      if (!base) return 'U';
+      const parts = base.split(/\s+/);
+      if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+
+    function syncProfileData() {
+      const user = getCurrentUser();
+      if (!user) return;
+
+      const nombres = user.nombres || (user.nombre ? user.nombre.split(/\s+/)[0] : '');
+      const apellidos = user.apellidos || (user.nombre ? user.nombre.split(/\s+/).slice(1).join(' ') : '');
+      const fullName = [nombres, apellidos].filter(Boolean).join(' ').trim() || user.nombre || '';
+      const email = user.email || '';
+      const ciudad = user.ciudad || '';
+
+      // Actualizar vista principal (usando únicamente nombres y apellidos reales, nunca el prefijo del correo)
+      document.getElementById('profileAvatarCircle').textContent = getInitials(nombres, apellidos, fullName);
+      document.getElementById('profileDisplayName').textContent = fullName || nombres;
+      document.getElementById('profileDisplayEmail').textContent = email;
+
+      // Actualizar formulario de edición
+      const fnInput = document.getElementById('editFirstName');
+      const lnInput = document.getElementById('editLastName');
+      const provSelect = document.getElementById('selectProvincia');
+      const citySelect = document.getElementById('selectCiudad');
+      const emailInput = document.getElementById('editEmail');
+      if (fnInput) fnInput.value = nombres;
+      if (lnInput) lnInput.value = apellidos;
+      if (typeof inicializarSelectoresUbicacion === 'function') {
+        inicializarSelectoresUbicacion();
+      }
+      if (provSelect && user.provincia && window.DIVISION_ECUADOR && window.DIVISION_ECUADOR[user.provincia]) {
+        provSelect.value = user.provincia;
+        provSelect.dispatchEvent(new Event('change'));
+      }
+      if (citySelect && ciudad) {
+        const opt = Array.from(citySelect.options).find(o => o.value === ciudad);
+        if (opt) citySelect.value = ciudad;
+      }
+      if (emailInput) emailInput.value = email;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = getCurrentUser();
+      if (!user) {
+        window.location.href = 'login.html?redirect=perfil.html';
+        return;
+      }
+      syncProfileData();
+    });
+
+    function showEditProfileView() {
+      document.getElementById('viewProfileMain').style.display = 'none';
+      document.getElementById('viewEditProfile').style.display = 'block';
+    }
+
+    function hideEditProfileView() {
+      document.getElementById('viewEditProfile').style.display = 'none';
+      document.getElementById('viewProfileMain').style.display = 'block';
+    }
+
+    async function handleSaveProfile(e) {
+      e.preventDefault();
+      const inputNombres = document.getElementById('editFirstName');
+      const inputApellidos = document.getElementById('editLastName');
+      const inputProvincia = document.getElementById('selectProvincia');
+      const inputCiudad = document.getElementById('selectCiudad') || document.getElementById('editCity');
+      const inputEmail = document.getElementById('editEmail');
+      const inputPassword = document.getElementById('editPassword');
+
+      const nombres = inputNombres.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '').trim();
+      const apellidos = inputApellidos.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '').trim();
+      const provincia = inputProvincia ? inputProvincia.value.trim() : 'Pichincha';
+      const ciudad = inputCiudad ? inputCiudad.value.trim() : 'Quito';
+      const email = inputEmail.value.trim();
+      const newPassword = inputPassword ? inputPassword.value : '';
+
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(email)) {
+        const errSmall = inputEmail.parentElement.querySelector('.text-error-email');
+        if (errSmall) errSmall.style.display = 'block';
+        inputEmail.style.borderColor = '#DC2626';
+        inputEmail.focus();
+        return;
+      }
+      if (nombres.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '').length < 2 || apellidos.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '').length < 2) {
+        alert('El nombre y el apellido deben contener al menos 2 letras válidas.');
+        return;
+      }
+
+      const currentUser = getCurrentUser() || {};
+      const prevEmail = String(currentUser.email || '').trim().toLowerCase();
+      const emailChanged = prevEmail !== email.toLowerCase();
+      const passwordChanged = newPassword.trim().length > 0;
+
+      if (window.supabaseClient) {
+        const { data, error } = await window.supabaseClient.rpc('fn_actualizar_perfil_y_correo', {
+          p_id_usuario: currentUser.id_usuario || currentUser.id,
+          p_nuevo_email: email,
+          p_nombres: nombres,
+          p_apellidos: apellidos,
+          p_ciudad: ciudad
+        });
+
+        if (error || (data && !data.success)) {
+          alert(data?.mensaje || "Error al actualizar los datos.");
+          return;
+        }
+
+        if (passwordChanged) {
+          try {
+            const pwdHash = (typeof hashPasswordSha256 === 'function')
+              ? await hashPasswordSha256(newPassword)
+              : newPassword;
+            await window.supabaseClient
+              .from('clientes')
+              .update({ password_hash: pwdHash })
+              .ilike('email', email.toLowerCase());
+          } catch (errPwd) {}
+        }
+      }
+
+      const user = {
+        ...currentUser,
+        nombres,
+        apellidos,
+        nombre: [nombres, apellidos].filter(Boolean).join(' ').trim(),
+        provincia,
+        ciudad,
+        email: email.toLowerCase()
+      };
+
+      setCurrentUser(user);
+      window.currentUser = user;
+      try {
+        sessionStorage.setItem('toteart_user', JSON.stringify(user));
+        localStorage.setItem('toteart_user', JSON.stringify(user));
+      } catch (err) {}
+
+      if (inputPassword) inputPassword.value = '';
+      updateBadges();
+      syncProfileData();
+      hideEditProfileView();
+
+      let successMsg = 'Tus datos han sido actualizados con éxito.';
+      if (emailChanged) {
+        successMsg = 'Tu correo electrónico ha sido actualizado correctamente.';
+      } else if (passwordChanged) {
+        successMsg = 'Tu contraseña ha sido modificada con éxito.';
+      }
+
+      const alertBox = document.getElementById('profileAlert');
+      if (alertBox) {
+        alertBox.textContent = successMsg;
+        alertBox.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => {
+          alertBox.style.display = 'none';
+        }, 4000);
+      }
+      if (emailChanged || passwordChanged) {
+        alert(successMsg);
+      }
+    }
+
+    // Abre el modal de confirmación en lugar de cerrar sesión de inmediato
+    function handleLogout() {
+      const modal = document.getElementById('confirmLogoutModal');
+      modal.classList.add('active');
+      document.getElementById('btnLogoutCancel').focus();
+    }
+
+    function closeLogoutModal() {
+      document.getElementById('confirmLogoutModal').classList.remove('active');
+    }
+
+    async function confirmLogout() {
+      try {
+        localStorage.removeItem('toteart_user');
+        sessionStorage.removeItem('toteart_user');
+        window.currentUser = null;
+      } catch (e) {}
+
+      if (typeof signOutFromSupabase === 'function') {
+        try { await signOutFromSupabase(); } catch (e) {}
+      }
+
+      closeLogoutModal();
+      const loginBtn = document.getElementById('loginHeaderBtn');
+      if (loginBtn) {
+        loginBtn.textContent = 'Iniciar sesión';
+        loginBtn.onclick = () => { window.location.href = 'login.html'; };
+      }
+      if (typeof updateBadges === 'function') {
+        updateBadges();
+      }
+      if (typeof navigateTo === 'function') {
+        navigateTo('home');
+      } else {
+        window.location.href = 'index.html';
+      }
+    }
+
+    // Cerrar modal con Escape o clic fuera de la tarjeta
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLogoutModal();
+    });
+    document.getElementById('confirmLogoutModal').addEventListener('click', (e) => {
+      if (e.target.id === 'confirmLogoutModal') closeLogoutModal();
+    });
+  </script>
+</body>
+</html>

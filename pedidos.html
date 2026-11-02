@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="img/icono.ico">
+  <title>Mis Pedidos - ToteArt</title>  
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+       ========================================================================= -->
+  <header class="header-wrapper">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" aria-label="Ir a página de inicio de ToteArt">
+        <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="">
+        <span>ToteArt</span>
+      </a>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar tote bag bordado..." aria-label="Buscar tote bag bordado">
+      </div>
+
+      <nav class="header-nav" aria-label="Navegación principal">
+        <a href="lista.html" class="nav-link" id="navWishlistBtn">Mi Lista (<span id="wishlistCountNav">0</span>)</a>
+        <a href="pedidos.html" class="nav-link active" id="navOrdersBtn">Mis Pedidos (<span id="ordersCountNav">0</span>)</a>
+        <a href="carrito.html" class="cart-btn" title="Ver Carrito de compras" aria-label="Ver carrito de compras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cartBadgeCount" aria-label="Artículos en carrito">0</span>
+        </a>
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="window.location.href='perfil.html'">
+          Mi Cuenta
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL: HISTORIAL Y TRACKING DE PEDIDOS
+       ========================================================================= -->
+  <main class="main-wrapper">
+    <a href="catalogo.html" class="back-link" style="display:inline-block; text-decoration:none; margin-bottom:16px;">
+      ← Volver al catálogo
+    </a>
+
+    <!-- Banner de confirmación para compra recién realizada -->
+    <div id="orderSuccessBanner" style="display:none; margin-bottom: 24px;"></div>
+
+    <h1 class="page-title">Mis Pedidos</h1>
+
+    <div id="trackingContentWrap">
+      <div id="ordersListContainer" class="orders-list-wrap"></div>
+      <div id="emptyOrdersState" class="empty-state-card" style="display:none;">
+        <div class="empty-icon-circle" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7A7067" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </div>
+        <h2 class="empty-state-title" style="font-size:20px;">Sin pedidos registrados</h2>
+        <a href="catalogo.html" class="btn-checkout-primary" style="margin: 16px auto 0; max-width: 220px; display:inline-block; text-decoration:none; text-align:center;">
+          Explorar catálogo
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const STATUS_LABELS = {
+      PAGADO: 'Pagado',
+      BORDADO_TALLER: 'En confección',
+      EN_CONFECCION: 'En confección',
+      EN_TRANSITO: 'En camino',
+      EN_CAMINO: 'En camino',
+      ENTREGADO: 'Entregado'
+    };
+
+    function calcularEstadoDinamico(fechaCreacion, esDomicilio, estadoActualBd) {
+      // Si en la base de datos ya se marcó manualmente como CANCELADO o RECHAZADO, respetarlo
+      if (['CANCELADO', 'RECHAZADO'].includes(String(estadoActualBd).toUpperCase())) {
+        return { texto: estadoActualBd.toUpperCase(), clase: 'status-cancelado' };
+      }
+
+      const ahora = Date.now();
+      const fechaPedidoMs = new Date(fechaCreacion).getTime();
+      const minutosTranscurridos = (ahora - fechaPedidoMs) / (1000 * 60);
+
+      if (esDomicilio) {
+        if (minutosTranscurridos < 2) {
+          return { texto: 'PAGADO', clase: 'status-pagado' };
+        } else if (minutosTranscurridos < 4) {
+          return { texto: 'EMPAQUETADO', clase: 'status-empaquetado' };
+        } else if (minutosTranscurridos < 6) {
+          return { texto: 'ENVIADO', clase: 'status-enviado' };
+        } else {
+          return { texto: 'COMPLETO', clase: 'status-completo' };
+        }
+      } else {
+        // Retiro en Local
+        if (minutosTranscurridos < 2) {
+          return { texto: 'PAGADO', clase: 'status-pagado' };
+        } else if (minutosTranscurridos < 4) {
+          return { texto: 'ESPERANDO TU LLEGADA', clase: 'status-esperando' };
+        } else {
+          return { texto: 'ENTREGADO', clase: 'status-entregado' };
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      cargarVistaPedidos();
+    });
+
+    async function cargarVistaPedidos() {
+      const container = document.getElementById('ordersListContainer') || document.querySelector('.orders-list-wrap');
+      const emptyState = document.getElementById('emptyOrdersState') || document.querySelector('.empty-state-card');
+      
+      // 1. Validar sesión
+      let session = {};
+      try { session = JSON.parse(localStorage.getItem('toteart_user') || '{}') || {}; } catch(e) {}
+      const activeId = session.id_cliente || session.id_usuario;
+      const activeEmail = session.email;
+
+      if (!activeId && !activeEmail) {
+        if (emptyState) {
+          emptyState.style.display = 'block';
+          emptyState.innerHTML = `
+            <h2 class="empty-state-title">Inicia sesión</h2>
+            <p class="empty-state-desc">Para revisar el historial y estado de tus compras, por favor ingresa con tu cuenta.</p>
+            <a href="login.html?redirect=pedidos.html" class="btn-primary btn-checkout-primary" style="margin-top:16px; display:inline-block; max-width:220px; text-decoration:none; text-align:center;">Iniciar sesión</a>
+          `;
+        }
+        if (container) container.innerHTML = '';
+        return;
+      }
+
+      // 2. Obtención de pedidos (Supabase + fusión con respaldo local para asegurar que se muestren todas las compras y sus ítems)
+      let dbOrdersList = [];
+      try {
+        if (window.supabaseClient) {
+          // Consulta con OR para garantizar coincidencia tanto si se guardó id_cliente como si fue id_usuario
+          let query = window.supabaseClient
+            .from('pedidos')
+            .select(`
+              id_pedido,
+              codigo_orden,
+              total,
+              subtotal,
+              costo_envio,
+              estado,
+              guia_servientrega,
+              fecha_pedido,
+              detalle_pedidos (
+                cantidad,
+                precio_unitario,
+                subtotal,
+                id_producto,
+                nombre_producto
+              )
+            `)
+            .order('fecha_pedido', { ascending: false });
+
+          if (session.id_cliente && session.id_usuario) {
+            query = query.or(`id_cliente.eq.${session.id_cliente},id_cliente.eq.${session.id_usuario}`);
+          } else if (activeId) {
+            query = query.eq('id_cliente', activeId);
+          }
+
+          let { data: dbOrders, error } = await query;
+          if (error) {
+            // Fallback por si el join de detalle_pedidos difiere en esquema
+            let fallbackQuery = window.supabaseClient
+              .from('pedidos')
+              .select('*, detalle_pedidos(*)')
+              .order('fecha_pedido', { ascending: false });
+            if (session.id_cliente && session.id_usuario) {
+              fallbackQuery = fallbackQuery.or(`id_cliente.eq.${session.id_cliente},id_cliente.eq.${session.id_usuario}`);
+            } else if (activeId) {
+              fallbackQuery = fallbackQuery.eq('id_cliente', activeId);
+            }
+            const retry = await fallbackQuery;
+            dbOrders = retry.data;
+            error = retry.error;
+          }
+
+          if (!error && Array.isArray(dbOrders) && dbOrders.length > 0) {
+            // Si algún pedido vino con detalle_pedidos vacío, intentar recuperar sus detalles por id_pedido o codigo_orden
+            for (const ord of dbOrders) {
+              if (!Array.isArray(ord.detalle_pedidos) || ord.detalle_pedidos.length === 0) {
+                try {
+                  let detRes = null;
+                  if (ord.id_pedido) {
+                    detRes = await window.supabaseClient
+                      .from('detalle_pedidos')
+                      .select('*')
+                      .eq('id_pedido', ord.id_pedido);
+                  }
+                  if ((!detRes || !Array.isArray(detRes.data) || detRes.data.length === 0) && ord.codigo_orden) {
+                    detRes = await window.supabaseClient
+                      .from('detalle_pedidos')
+                      .select('*')
+                      .eq('codigo_orden', ord.codigo_orden);
+                  }
+                  if (detRes && Array.isArray(detRes.data) && detRes.data.length > 0) {
+                    ord.detalle_pedidos = detRes.data;
+                  }
+                } catch (eDet) {}
+              }
+            }
+            dbOrdersList = dbOrders;
+          }
+        }
+      } catch (err) {
+        console.warn('[Pedidos] Consulta remota falló, usando respaldo local:', err);
+      }
+
+      // Obtener pedidos del respaldo local filtrados por usuario activo
+      let localUserOrders = [];
+      try {
+        const local = JSON.parse(localStorage.getItem('toteart_orders') || '[]');
+        if (Array.isArray(local)) {
+          localUserOrders = local.filter(o =>
+            (activeId && (String(o.idCliente) === String(activeId) || String(o.id_cliente) === String(activeId) || (session.id_usuario && (String(o.idCliente) === String(session.id_usuario) || String(o.id_cliente) === String(session.id_usuario))))) ||
+            (activeEmail && (o.customerEmail === activeEmail || o.email === activeEmail))
+          );
+        }
+      } catch(e) {}
+
+      // Combinar pedidos de Supabase y respaldo local sin duplicar por código de orden, preservando todos los pedidos y sus ítems
+      const mergedMap = new Map();
+      for (const dbOrd of dbOrdersList) {
+        const key = String(dbOrd.codigo_orden || dbOrd.code || dbOrd.id_pedido || Math.random()).replace(/^#+/, '');
+        const matchingLocal = localUserOrders.find(lo => String(lo.codigo_orden || lo.code || '').replace(/^#+/, '') === key);
+        if ((!Array.isArray(dbOrd.detalle_pedidos) || dbOrd.detalle_pedidos.length === 0) && matchingLocal && Array.isArray(matchingLocal.items) && matchingLocal.items.length > 0) {
+          dbOrd.items = matchingLocal.items;
+        }
+        mergedMap.set(key, dbOrd);
+      }
+      for (const locOrd of localUserOrders) {
+        const key = String(locOrd.codigo_orden || locOrd.code || Math.random()).replace(/^#+/, '');
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, locOrd);
+        }
+      }
+
+      const orders = Array.from(mergedMap.values());
+      console.log('[Pedidos] Total de órdenes cargadas para el usuario:', orders.length, orders);
+
+      // Actualizar contador de pedidos en el header si existe
+      const ordersBadge = document.getElementById('ordersCountNav');
+      if (ordersBadge) {
+        ordersBadge.textContent = Array.isArray(orders) ? orders.length : 0;
+      }
+
+      // 3. Renderizado de la UI
+      if (!orders || orders.length === 0) {
+        if (emptyState) {
+          emptyState.style.display = 'block';
+          emptyState.innerHTML = `
+            <div class="empty-icon-circle" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7A7067" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <h2 class="empty-state-title" style="font-size:20px;">Sin pedidos registrados</h2>
+            <a href="catalogo.html" class="btn-checkout-primary" style="margin: 16px auto 0; max-width: 220px; display:inline-block; text-decoration:none; text-align:center;">
+              Explorar catálogo
+            </a>
+          `;
+        }
+        if (container) container.innerHTML = '';
+        return;
+      }
+
+      if (emptyState) emptyState.style.display = 'none';
+
+      if (container) {
+        container.innerHTML = orders.map(ord => {
+          const code = String(ord.codigo_orden || ord.code || 'TAT-0000').replace(/^#+/, '');
+          const date = new Date(ord.fecha_pedido || ord.fechaPedido || ord.date || Date.now()).toLocaleDateString('es-EC', {
+            day: 'numeric', month: 'long', year: 'numeric'
+          });
+          const total = Number(ord.total || 0).toFixed(2);
+          
+          // Detectar método de entrega de forma precisa
+          const metodoEntrega = String(ord.metodo_envio || ord.metodo_entrega || ord.shippingMethod || ord.deliveryMethod || '').toUpperCase();
+          const trackingNumber = ord.guia_servientrega || ord.trackingNumber || ord.guia;
+          const costoEnvio = ord.costo_envio != null ? Number(ord.costo_envio) : (ord.shippingCost != null ? Number(ord.shippingCost) : null);
+          const esRetiroExplicito = metodoEntrega.includes('RETIRO') || metodoEntrega.includes('TIENDA') || metodoEntrega.includes('LOCAL') || costoEnvio === 0;
+          
+          // Es domicilio si el método lo indica explícitamente y tiene guía asignada (y no fue marcado como retiro en tienda)
+          const esDomicilio = !esRetiroExplicito && (metodoEntrega.includes('ENVIO') || metodoEntrega.includes('DOMICILIO') || (!metodoEntrega && trackingNumber)) && Boolean(trackingNumber && String(trackingNumber).trim() !== '');
+
+          // Cálculo dinámico del estado según tiempo transcurrido (instrucciones.txt)
+          const estadoInfo = calcularEstadoDinamico(ord.fecha_pedido || ord.fechaPedido || ord.date || Date.now(), esDomicilio, ord.estado);
+          const coloresPorEstado = {
+            'PAGADO': { bg: '#E8F5E9', color: '#2E7D32' },
+            'EMPAQUETADO': { bg: '#FFF8E1', color: '#F57F17' },
+            'ENVIADO': { bg: '#E3F2FD', color: '#1565C0' },
+            'COMPLETO': { bg: '#E8F5E9', color: '#1B5E20' },
+            'ESPERANDO TU LLEGADA': { bg: '#FFF3E0', color: '#E65100' },
+            'ENTREGADO': { bg: '#E8F5E9', color: '#2E7D32' }
+          };
+          const estiloBadge = coloresPorEstado[estadoInfo.texto] || { bg: '#E8F5E9', color: '#2E7D32' };
+
+          const rawItems = (Array.isArray(ord.detalle_pedidos) && ord.detalle_pedidos.length > 0)
+            ? ord.detalle_pedidos
+            : (Array.isArray(ord.items) ? ord.items : []);
+          const catalog = window.PRODUCTS || (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []);
+
+          return `
+            <article class="order-card" style="background:#fff; border:1px solid #e0deda; border-radius:12px; padding:24px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+              
+              <!-- Cabecera de la orden (SIN el botón duplicado de Servientrega arriba) -->
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid #f0eee9; padding-bottom:16px; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                <div>
+                  <span style="font-size:0.8rem; color:#7a7672; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Orden</span>
+                  <h3 style="margin:2px 0 4px; color:#2E4A3D; font-size:1.25rem;">#${code}</h3>
+                  <span style="font-size:0.85rem; color:#9c9792;">${date}</span>
+                </div>
+                
+                <div>
+                  <span class="order-status-badge ${estadoInfo.clase}" 
+                        style="padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; background: ${estiloBadge.bg}; color: ${estiloBadge.color}; text-transform: uppercase;">
+                    ${estadoInfo.texto}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Banner de Entrega según método seleccionado -->
+              ${esDomicilio ? `
+                <!-- CASO 1: Envío a Domicilio (Banner con guía y enlace oficial a Servientrega) -->
+                <div style="background:#f4f8f5; border-left:4px solid #2E7D32; padding:12px 16px; border-radius:0 8px 8px 0; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                  <div>
+                    <span style="font-size:0.8rem; color:#555; display:block;">Número de guía asignado:</span>
+                    <strong style="color:#1B5E20; font-size:1.05rem; font-family:monospace;">${trackingNumber}</strong>
+                  </div>
+                  <a href="https://www.servientrega.com.ec/" target="_blank" rel="noopener noreferrer" style="font-size:0.85rem; color:#2E7D32; font-weight:600; text-decoration:underline;">
+                    Consultar guía oficial &rarr;
+                  </a>
+                </div>
+              ` : `
+                <!-- CASO 2: Retiro en Local / Tienda (Sin mención a Servientrega) -->
+                <div style="background:#FAF8F5; border-left:4px solid #B08968; padding:12px 16px; border-radius:0 8px 8px 0; margin-bottom:18px;">
+                  <div style="font-size:0.85rem; color:#6B5E55; line-height:1.5;">
+                    Puedes retirar tu pedido presentando este código en nuestro local.<br>
+                    <strong>Dirección:</strong> Av. Amazonas N34-120 y Gaspar de Villarroel, Quito<br>
+                    <strong>Horario de atención:</strong> Lunes a Sábado de 10:00 a 18:00
+                  </div>
+                </div>
+              `}
+
+              <!-- Lista de productos -->
+              <div class="order-items-list" style="margin-bottom:16px;">
+                ${rawItems.map(item => {
+                  const prodId = item.id_producto || item.id || (item.product ? item.product.id : '');
+                  const prodInfo = catalog.find(p => String(p.id) === String(prodId)) || (item.product || {});
+                  const title = item.nombre_producto || item.title || prodInfo.title || prodInfo.nombre || 'Tote Bag Artesanal';
+                  const rawImg = prodInfo.image || prodInfo.imagen || item.imagen || (prodInfo.imgFile ? 'img/' + prodInfo.imgFile : 'img/Logo ToteArt.jpeg');
+                  const img = (rawImg.startsWith('img/') || rawImg.startsWith('http')) ? rawImg : 'img/' + rawImg;
+                  const qty = Number(item.cantidad || item.quantity || 1);
+                  const price = Number(item.precio_unitario || item.price || (item.product ? item.product.price : 0) || 0).toFixed(2);
+                  const subtotal = (qty * price).toFixed(2);
+
+                  return `
+                    <div style="display:flex; align-items:center; gap:16px; padding:10px 0; border-bottom:1px dashed #f0eee9;">
+                      <img src="${img}" alt="${title}" style="width:55px; height:55px; object-fit:cover; border-radius:8px; border:1px solid #eaeaea;" onerror="this.onerror=null; this.src='img/Logo ToteArt.jpeg';">
+                      <div style="flex:1;">
+                        <h4 style="margin:0; font-size:0.95rem; color:#333;">${title}</h4>
+                        <span style="font-size:0.85rem; color:#777;">Cantidad: ${qty} × $${price}</span>
+                      </div>
+                      <strong style="color:#2E4A3D;">$${subtotal}</strong>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+
+              <!-- Total pagado -->
+              <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f0eee9; padding-top:14px; margin-top:8px;">
+                <span style="color:#666; font-size:0.95rem;">Total pagado:</span>
+                <span style="font-size:1.3rem; font-weight:700; color:#2E4A3D;">$${total}</span>
+              </div>
+
+            </article>
+          `;
+        }).join('');
+      }
+    }
+
+    const obtenerPedidosUsuario = cargarVistaPedidos;
+    const renderTrackingView = cargarVistaPedidos;
+
+    // Refrescar estados cada 30 segundos automáticamente
+    setInterval(() => {
+      if (typeof cargarVistaPedidos === 'function') {
+        cargarVistaPedidos();
+      }
+    }, 30000);
+  </script>
+</body>
+</html>

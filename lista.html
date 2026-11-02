@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="img/icono.ico">
+  <title>Mi Lista - ToteArt</title>  
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+       ========================================================================= -->
+  <header class="header-wrapper">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" aria-label="Ir a página de inicio de ToteArt">
+        <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="">
+        <span>ToteArt</span>
+      </a>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar tote bag bordado..." aria-label="Buscar tote bag bordado">
+      </div>
+
+      <nav class="header-nav" aria-label="Navegación principal">
+        <a href="lista.html" class="nav-link active" id="navWishlistBtn">
+          Mi Lista (<span id="wishlistCountNav">0</span>)
+        </a>
+        <a href="pedidos.html" class="nav-link" id="navOrdersBtn">Mis Pedidos (<span id="ordersCountNav">0</span>)</a>
+        <a href="carrito.html" class="cart-btn" title="Ver Carrito de compras" aria-label="Ver carrito de compras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cartBadgeCount" aria-label="Artículos en carrito">0</span>
+        </a>
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="window.location.href='login.html'">
+          Iniciar sesión
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL: MI LISTA (WISHLIST)
+       ========================================================================= -->
+  <main class="main-wrapper">
+    <a href="catalogo.html" class="back-link" style="display:inline-block; text-decoration:none; margin-bottom:16px;">
+      ← Volver al catálogo
+    </a>
+
+    <h1 class="page-title">Mi Lista</h1>
+
+    <div id="wishlistContainer">
+      <!-- Renderizado dinámico vía JS -->
+    </div>
+  </main>
+
+  <!-- Modal de Confirmación de Eliminación para Mi Lista -->
+  <div class="modal-overlay" id="confirmDeleteModal" role="dialog" aria-modal="true" aria-labelledby="modalTitleText">
+    <div class="modal-card">
+      <h3 class="modal-title" id="modalTitleText">¿Estás seguro de que quieres eliminar este producto de tu lista?</h3>
+      <div class="modal-body">
+        <span class="modal-item-highlight" id="modalItemTitle">Tote bag</span>
+        <span id="modalBodySubtext">Podrás volver a añadirlo desde el catálogo en cualquier momento.</span>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal-cancel" onclick="closeDeleteModal()">Cancelar</button>
+        <button type="button" class="btn-modal-confirm" id="btnModalConfirmDelete">Sí, eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let pendingDeleteWishlistId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderWishlistView();
+    });
+
+    async function renderWishlistView() {
+      const container = document.getElementById('wishlistContainer');
+      // Los favoritos se leen desde Supabase (tabla `favoritos`), no solo de localStorage
+      let wishlist = [];
+      try {
+        wishlist = await syncWishlistFromCloud();
+      } catch (e) {
+        console.error('Error al obtener favoritos:', e);
+      }
+      updateBadges();
+
+      if (wishlist.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state-card">
+            <div class="empty-icon-circle" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7A7067" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            </div>
+            <h2 class="empty-state-title" style="font-size:20px;">Tu lista está vacía</h2>
+            <p class="empty-state-desc">Parece que aún no has guardado ningún tote bag artesanal.</p>
+            <a href="catalogo.html" class="btn-checkout-primary" style="margin: 0 auto; max-width: 220px; display:inline-block; text-decoration:none; text-align:center;">
+              Explorar catálogo
+            </a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="wishlist-grid">
+          ${wishlist.map(product => `
+            <div class="product-card">
+              <div class="product-img-box" onclick="window.location.href='producto.html?id=${encodeURIComponent(product.id)}'" style="cursor:pointer">
+                <img src="${typeof resolveExactImgFile === 'function' ? 'img/' + resolveExactImgFile(product.imgFile, product.title, product.id) : 'img/' + String(product.imgFile || '').replace(/^img\//i, '')}" alt="${product.altText || product.title}" onerror="if(typeof handleImgFallback==='function')handleImgFallback(this)">
+              </div>
+              <h4 class="product-info-title">${product.title}</h4>
+              <div class="product-rating">
+                <span class="star" style="color:#D97706" aria-hidden="true">★</span>
+                <span data-rating-text-for="${product.id}">${typeof getProductRatingSummary === 'function' ? getProductRatingSummary(product.id).text : '4.8'}</span>
+              </div>
+              <div class="product-price" style="color: #2D5A43; font-weight: 700;">$${product.price.toFixed(2)} USD</div>
+              <div class="product-card-actions">
+                <button type="button" class="btn-detail btn-view-detail btn-secondary" onclick="window.location.href='producto.html?id=${encodeURIComponent(product.id)}'">Ver detalle</button>
+                <button type="button" class="btn-add-cart" onclick="quickAddToCart('${product.id}', event)">Añadir al carrito</button>
+                <button type="button" class="btn-remove-square" title="Eliminar de mi lista" aria-label="Eliminar ${product.title} de mi lista" onclick="promptRemoveWishlistItem('${product.id}')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                  Quitar
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      if (typeof refreshAllProductRatingsUI === 'function') {
+        refreshAllProductRatingsUI();
+      }
+    }
+
+    function promptRemoveWishlistItem(productId) {
+      pendingDeleteWishlistId = productId;
+      const wishlist = getStoredWishlist();
+      const product = wishlist.find(p => p.id === productId);
+      if (!product) return;
+
+      document.getElementById('modalTitleText').textContent = '¿Eliminar este producto de tu lista?';
+      document.getElementById('modalItemTitle').textContent = product.title;
+      document.getElementById('modalBodySubtext').textContent = '';
+
+      document.getElementById('confirmDeleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('confirmDeleteModal').classList.remove('active');
+      pendingDeleteWishlistId = null;
+    }
+
+    document.getElementById('btnModalConfirmDelete').addEventListener('click', async () => {
+      if (pendingDeleteWishlistId) {
+        const idToRemove = pendingDeleteWishlistId;
+        closeDeleteModal();
+        try {
+          await removeFavoriteFromCloud(idToRemove);
+        } catch (e) {
+          console.error('Error al eliminar favorito:', e);
+        }
+        updateBadges();
+        renderWishlistView();
+        return;
+      }
+      closeDeleteModal();
+    });
+  </script>
+</body>
+</html>

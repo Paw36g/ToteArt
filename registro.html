@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="img/icono.ico">
+  <title>Crear Cuenta - ToteArt</title>  
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR
+       ========================================================================= -->
+  <header class="header-wrapper">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" aria-label="Ir a página de inicio de ToteArt">
+        <img src="img/Logo ToteArt.jpeg" data-img-type="logo" onerror="handleImgFallback(this)" alt="">
+        <span>ToteArt</span>
+      </a>
+
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar tote bag bordado..." aria-label="Buscar tote bag bordado">
+      </div>
+
+      <nav class="header-nav" aria-label="Navegación principal">
+        <a href="lista.html" class="nav-link" id="navWishlistBtn">Mi Lista (<span id="wishlistCountNav">0</span>)</a>
+        <a href="pedidos.html" class="nav-link" id="navOrdersBtn">Mis Pedidos (<span id="ordersCountNav">0</span>)</a>
+        <a href="carrito.html" class="cart-btn" title="Ver Carrito de compras" aria-label="Ver carrito de compras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cartBadgeCount" aria-label="Artículos en carrito">0</span>
+        </a>
+        <button class="login-header-btn" id="loginHeaderBtn" onclick="window.location.href='login.html'">
+          Iniciar sesión
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL: REGISTRO MINIMALISTA
+       ========================================================================= -->
+  <main class="main-wrapper">
+    <div style="max-width: 480px; margin: 30px auto;">
+      <a href="login.html" class="back-link" style="display:inline-block; text-decoration:none; margin-bottom:16px;">
+        ← Volver a inicio de sesión
+      </a>
+
+      <div class="auth-card">
+        <h1 class="auth-card-title" style="font-size: 22px; text-align:center;">Crea tu cuenta en ToteArt</h1>
+        <p class="auth-card-desc" style="text-align:center;">Crea tu cuenta con nosotros para estar al pendiente de cada nuevo diseño.</p>
+
+        <form id="registerForm" onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label class="form-label" for="regFirstName">Nombre *</label>
+            <input type="text" class="form-control" id="regFirstName" name="nombres" required placeholder="Tu nombre" autocomplete="given-name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regLastName">Apellido *</label>
+            <input type="text" class="form-control" id="regLastName" name="apellidos" required placeholder="Tu apellido" autocomplete="family-name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regEmail">Correo electrónico *</label>
+            <input type="email" class="form-control" id="regEmail" name="email" required placeholder="tu@correo.com" autocomplete="email">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 24px;">
+            <label class="form-label" for="regPassword">Contraseña *</label>
+            <input type="password" class="form-control" id="regPassword" name="password" required minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+          </div>
+
+          <button type="submit" class="btn-checkout-primary" id="btnRegisterSubmit" style="width: 100%;">
+            Registrarse y continuar
+          </button>
+        </form>
+
+        <p style="text-align:center; font-size:13px; margin-top:20px;">
+          ¿Ya tienes una cuenta?
+          <a href="login.html" id="loginBackLink" style="color:var(--primary); font-weight:600; text-decoration:none;">
+            Inicia sesión aquí
+          </a>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect');
+      if (redirect) {
+        const loginLink = document.getElementById('loginBackLink');
+        if (loginLink) {
+          loginLink.href = `login.html?redirect=${encodeURIComponent(redirect)}`;
+        }
+      }
+    });
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      // Extract form fields (fallback to empty strings if not present)
+      const nombreInput = document.getElementById('regFirstName');
+      const apellidoInput = document.getElementById('regLastName');
+      const emailInput = document.getElementById('regEmail');
+      const passwordInput = document.getElementById('regPassword');
+      const telefonoInput = document.getElementById('regPhone'); // optional
+      const cedulaInput = document.getElementById('regID'); // optional
+
+      const nombres = nombreInput ? nombreInput.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '').trim() : '';
+      const apellidos = apellidoInput ? apellidoInput.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '').trim() : '';
+      const email = emailInput ? emailInput.value.trim() : '';
+      const password = passwordInput ? passwordInput.value : '';
+      const telefono = telefonoInput ? telefonoInput.value.trim() : '';
+      const cedula = cedulaInput ? cedulaInput.value.trim() : '';
+
+      // Basic email format validation (already present elsewhere)
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(email)) {
+        const errSmall = emailInput.parentElement.querySelector('.text-error-email');
+        if (errSmall) errSmall.style.display = 'block';
+        emailInput.style.borderColor = '#DC2626';
+        emailInput.focus();
+        return;
+      }
+
+      // Simple name validation (minimum 2 characters each)
+      if (nombres.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '').length < 2 ||
+          apellidos.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '').length < 2) {
+        alert('El nombre y el apellido deben contener al menos 2 letras válidas.');
+        return;
+      }
+
+      const btn = document.getElementById('btnRegisterSubmit');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Creando cuenta...';
+      }
+
+      // --- Begin verified registration logic ---
+      const cleanEmail = email.trim().toLowerCase();
+      const { data: existingUser, error: searchError } = await window.supabaseClient
+        .from('usuarios')
+        .select('id_usuario')
+        .eq('email', cleanEmail);
+      if (searchError) {
+        console.error('Error al consultar usuario:', searchError);
+        alert('Error de conexión. Intenta nuevamente.');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Registrarse y continuar';
+        }
+        return;
+      }
+      if (existingUser && existingUser.length > 0) {
+        alert('Este correo ya se encuentra registrado. Por favor, inicia sesión.');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Registrarse y continuar';
+        }
+        return;
+      }
+
+      const { data: newUser, error: userError } = await window.supabaseClient
+        .from('USUARIOS')
+        .insert([
+          {
+            email: cleanEmail,
+            password_hash: password,
+            id_rol: 2,
+            activo: true
+          }
+        ])
+        .select()
+        .single();
+      if (userError) {
+        console.error('Error al crear usuario:', userError);
+        alert(`No se pudo crear la cuenta: ${userError.message}`);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Registrarse y continuar';
+        }
+        return;
+      }
+
+      const { data: newClient, error: clientError } = await window.supabaseClient
+        .from('CLIENTES')
+        .insert([
+          {
+            id_usuario: newUser.id_usuario,
+            nombres: nombres,
+            apellidos: apellidos,
+            cedula_ruc: cedula,
+            telefono: telefono,
+            ciudad: 'Quito',
+            provincia: 'Pichincha'
+          }
+        ])
+        .select()
+        .single();
+      if (clientError) {
+        console.error('Error al insertar cliente:', clientError);
+        alert(`Error al registrar datos del perfil: ${clientError.message}`);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Registrarse y continuar';
+        }
+        return;
+      }
+
+      // 1. Correo de Bienvenida con await ANTES de cualquier redirección
+      try {
+        await sendWelcomeEmail({ nombres: nombres, nombre: nombres, email: cleanEmail });
+      } catch (mailErr) {
+        console.warn('Aviso: No se pudo enviar el correo de bienvenida', mailErr);
+      }
+
+      // 2. Inicio de sesión automático con sesión estandarizada (toteart_user)
+      const sessionData = {
+        id_usuario: newUser.id_usuario,
+        id_cliente: newClient ? newClient.id_cliente : null,
+        nombres: nombres,
+        apellidos: apellidos,
+        email: cleanEmail,
+        telefono: telefono
+      };
+      localStorage.setItem('toteart_user', JSON.stringify(sessionData));
+      try { sessionStorage.setItem('toteart_user', JSON.stringify(sessionData)); } catch (e) {}
+      window.currentUser = sessionData;
+      if (typeof updateBadges === 'function') updateBadges();
+
+      // 3. Sin redirección a login: ir al destino previo o a index.html
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect');
+      window.location.href = redirect ? redirect : 'index.html';
+      // --- End verified registration logic ---
+    }
+  </script>
+</body>
+</html>
+
