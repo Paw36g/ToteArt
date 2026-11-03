@@ -609,6 +609,54 @@ function getCartItemCount() {
   return cart.reduce((acc, item) => acc + (item.quantity || 0), 0);
 }
 
+async function refrescarContadorPedidos() {
+  const badge = document.getElementById('ordersCountNav');
+  if (!badge) return;
+
+  let session = {};
+  try { session = JSON.parse(localStorage.getItem('toteart_user') || '{}'); } catch(e) {}
+  const activeId = session.id_cliente || session.id_usuario;
+
+  if (!activeId) {
+    badge.textContent = '0';
+    return;
+  }
+
+  // 1. Intentar desde caché local
+  try {
+    const local = JSON.parse(localStorage.getItem('toteart_orders') || '[]');
+    const myOrders = local.filter(o => 
+      (String(o.id_cliente) === String(activeId) || String(o.idCliente) === String(activeId) || (session.email && (o.customerEmail === session.email || o.email === session.email)))
+    );
+    if (myOrders.length > 0) {
+      badge.textContent = myOrders.length;
+      return;
+    }
+  } catch(e) {}
+
+  // 2. Si no hay en local, consultar en Supabase
+  if (window.supabaseClient) {
+    try {
+      let query = window.supabaseClient
+        .from('pedidos')
+        .select('*', { count: 'exact', head: true });
+
+      if (session.id_cliente && session.id_usuario) {
+        query = query.or(`id_cliente.eq.${session.id_cliente},id_cliente.eq.${session.id_usuario}`);
+      } else {
+        query = query.eq('id_cliente', activeId);
+      }
+
+      const { count, error } = await query;
+
+      if (!error && count !== null) {
+        badge.textContent = count;
+      }
+    } catch(err) {}
+  }
+}
+window.refrescarContadorPedidos = refrescarContadorPedidos;
+
 function updateBadges() {
   const cartCount = getCartItemCount();
   const cartBadge = document.getElementById('cartBadgeCount');
@@ -628,22 +676,7 @@ function updateBadges() {
   const activeEmail = sessionUser.email || null;
   const isAuthenticated = !!(activeId || activeEmail);
 
-  const ordersBadge = document.getElementById('ordersCountNav');
-  if (ordersBadge) {
-    let ordersCount = 0;
-    if (isAuthenticated) {
-      try {
-        const localOrders = JSON.parse(localStorage.getItem('toteart_orders') || '[]');
-        if (Array.isArray(localOrders)) {
-          ordersCount = localOrders.filter(o =>
-            (activeId && (String(o.idCliente) === String(activeId) || String(o.id_cliente) === String(activeId) || (sessionUser.id_usuario && (String(o.idCliente) === String(sessionUser.id_usuario) || String(o.id_cliente) === String(sessionUser.id_usuario))))) ||
-            (activeEmail && (o.customerEmail === activeEmail || o.email === activeEmail))
-          ).length;
-        }
-      } catch (e) {}
-    }
-    ordersBadge.textContent = ordersCount;
-  }
+  refrescarContadorPedidos();
 
   const user = getCurrentUser();
   const loginBtn = document.getElementById('loginHeaderBtn');

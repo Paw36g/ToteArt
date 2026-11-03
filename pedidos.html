@@ -122,8 +122,19 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      cargarVistaPedidos();
+    async function asegurarCatalogoCargado() {
+      if (Array.isArray(window.PRODUCTS) && window.PRODUCTS.length > 0) return;
+      
+      if (typeof loadProductsFromSupabase === 'function') {
+        await loadProductsFromSupabase();
+      } else if (typeof window.fetchProducts === 'function') {
+        await window.fetchProducts();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await asegurarCatalogoCargado();
+      await cargarVistaPedidos();
     });
 
     async function cargarVistaPedidos() {
@@ -148,6 +159,8 @@
         if (container) container.innerHTML = '';
         return;
       }
+
+      await asegurarCatalogoCargado();
 
       // 2. Obtención de pedidos (Supabase + fusión con respaldo local para asegurar que se muestren todas las compras y sus ítems)
       let dbOrdersList = [];
@@ -370,12 +383,13 @@
               <!-- Lista de productos -->
               <div class="order-items-list" style="margin-bottom:16px;">
                 ${rawItems.map(item => {
-                  const prodId = item.id_producto || item.id || (item.product ? item.product.id : '');
-                  const prodInfo = catalog.find(p => String(p.id) === String(prodId)) || (item.product || {});
+                  const prodId = item.id_producto || item.id;
+                  const prodInfo = (window.PRODUCTS || []).find(p => String(p.id) === String(prodId)) || (item.product || {});
+
                   const title = item.nombre_producto || item.title || prodInfo.title || prodInfo.nombre || 'Tote Bag Artesanal';
-                  const rawImg = prodInfo.image || prodInfo.imagen || item.imagen || (prodInfo.imgFile ? 'img/' + prodInfo.imgFile : 'img/Logo ToteArt.jpeg');
+                  const rawImg = prodInfo.image || prodInfo.imagen || item.imagen_url || item.imagen || (prodInfo.imgFile ? 'img/' + prodInfo.imgFile : 'img/Logo ToteArt.jpeg');
                   const img = (rawImg.startsWith('img/') || rawImg.startsWith('http')) ? rawImg : 'img/' + rawImg;
-                  const qty = Number(item.cantidad || item.quantity || 1);
+                  const qty = item.cantidad || item.quantity || 1;
                   const price = Number(item.precio_unitario || item.price || (item.product ? item.product.price : 0) || 0).toFixed(2);
                   const subtotal = (qty * price).toFixed(2);
 

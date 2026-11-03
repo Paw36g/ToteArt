@@ -1,95 +1,97 @@
-### DIRECTIVA DE IMPLEMENTACIÓN: SIMULACIÓN TEMPORAL DE ESTADOS DE PEDIDO
+### DIRECTIVA QUIRÚRGICA: PARIDAD TOTAL VERCEL VS LIVE SERVER
 
 **REGLA DE CONSERVACIÓN:**
-- Prohibido modificar estilos en `styles.css`, la autenticación, la conexión con Supabase o el flujo de favoritos.
-- No alterar los botones de Servientrega ni el desglose de productos ya corregidos.
-- Trabajar exclusivamente en la función que calcula y renderiza el estado dinámico del pedido en `pedidos.html`.
+- Prohibido tocar `styles.css`, la base de datos de Supabase, las alertas de checkout, la lógica de favoritos o los correos.
+- No alterar el diseño visual de las tarjetas de pedidos ni los botones de entrega.
+- Resolver estrictamente la sincronización asíncrona en producción para que Vercel se comporte exactamente igual que Live Server.
 
 ---
 
-#### 1. LÓGICA DE TRANSICIÓN TEMPORAL DE ESTADOS (Tiempo transcurrido)
-Para que los estados avancen de forma natural y automática según los minutos transcurridos desde que se creó el pedido (`fecha_pedido`), aplica la siguiente función de cálculo temporal:
+#### 1. SOLUCIÓN A PRODUCTOS VACÍOS EN VERCEL (`pedidos.html`)
+**Causa:** En Vercel, por latencia de red, `pedidos.html` se renderiza antes de que la consulta asíncrona llene `window.PRODUCTS`. Como `PRODUCTS` está vacío en ese instante, el `.find()` no encuentra títulos ni fotos y deja el espacio en blanco.
 
-**A) Si el método es ENVÍO A DOMICILIO:**
-1. **0 a 2 minutos:** `PAGADO`
-2. **2 a 4 minutos:** `EMPAQUETADO`
-3. **4 a 6 minutos:** `ENVIADO`
-4. **Más de 6 minutos:** `COMPLETO`
-
-**B) Si el método es RETIRO EN LOCAL / TIENDA:**
-1. **0 a 2 minutos:** `PAGADO`
-2. **2 a 4 minutos:** `ESPERANDO TU LLEGADA`
-3. **Más de 4 minutos:** `ENTREGADO`
-
----
-
-#### 2. FUNCIÓN DE CÁLCULO DE ESTADO DINÁMICO EN `pedidos.html`
-
-Inserta esta función auxiliar en el script de `pedidos.html`:
-
+**Acción en `pedidos.html`:**
+1. Antes de invocar la función que dibuja las tarjetas, obligar a la página a esperar (`await`) que el catálogo de productos esté completamente cargado en memoria:
 ```javascript
-function calcularEstadoDinamico(fechaCreacion, esDomicilio, estadoActualBd) {
-  // Si en la base de datos ya se marcó manualmente como CANCELADO o RECHAZADO, respetarlo
-  if (['CANCELADO', 'RECHAZADO'].includes(String(estadoActualBd).toUpperCase())) {
-    return { texto: estadoActualBd.toUpperCase(), clase: 'status-cancelado' };
-  }
-
-  const ahora = Date.now();
-  const fechaPedidoMs = new Date(fechaCreacion).getTime();
-  const minutosTranscurridos = (ahora - fechaPedidoMs) / (1000 * 60);
-
-  if (esDomicilio) {
-    if (minutosTranscurridos < 2) {
-      return { texto: 'PAGADO', clase: 'status-pagado' };
-    } else if (minutosTranscurridos < 4) {
-      return { texto: 'EMPAQUETADO', clase: 'status-empaquetado' };
-    } else if (minutosTranscurridos < 6) {
-      return { texto: 'ENVIADO', clase: 'status-enviado' };
-    } else {
-      return { texto: 'COMPLETO', clase: 'status-completo' };
-    }
-  } else {
-    // Retiro en Local
-    if (minutosTranscurridos < 2) {
-      return { texto: 'PAGADO', clase: 'status-pagado' };
-    } else if (minutosTranscurridos < 4) {
-      return { texto: 'ESPERANDO TU LLEGADA', clase: 'status-esperando' };
-    } else {
-      return { texto: 'ENTREGADO', clase: 'status-entregado' };
-    }
+async function asegurarCatalogoCargado() {
+  if (Array.isArray(window.PRODUCTS) && window.PRODUCTS.length > 0) return;
+  
+  if (typeof loadProductsFromSupabase === 'function') {
+    await loadProductsFromSupabase();
+  } else if (typeof window.fetchProducts === 'function') {
+    await window.fetchProducts();
   }
 }
 
-3. ACTUALIZACIÓN DEL ÓVALO / BADGE EN LA TARJETA (pedidos.html)
-En el ciclo donde se genera el HTML de cada tarjeta de pedido:
+Asegurar que en el punto de entrada (DOMContentLoaded o inicio de script), se ejecute en este orden estricto:
 
-Llamar a la función:
-const estadoInfo = calcularEstadoDinamico(ord.fecha_pedido || ord.date, esDomicilio, ord.estado);
-Pintar el óvalo superior con los colores y texto correspondientes:
-// Estilos de colores por estado para el óvalo
-const coloresPorEstado = {
-  'PAGADO': { bg: '#E8F5E9', color: '#2E7D32' },
-  'EMPAQUETADO': { bg: '#FFF8E1', color: '#F57F17' },
-  'ENVIADO': { bg: '#E3F2FD', color: '#1565C0' },
-  'COMPLETO': { bg: '#E8F5E9', color: '#1B5E20' },
-  'ESPERANDO TU LLEGADA': { bg: '#FFF3E0', color: '#E65100' },
-  'ENTREGADO': { bg: '#E8F5E9', color: '#2E7D32' }
-};
+document.addEventListener('DOMContentLoaded', async () => {
+  await asegurarCatalogoCargado();
+  await cargarVistaPedidos();
+});
 
-const estiloBadge = coloresPorEstado[estadoInfo.texto] || { bg: '#E8F5E9', color: '#2E7D32' };
+En el bucle de mapeo de productos de la tarjeta, agregar lectura defensiva directa de la orden por si la red fallara, asegurando que el título y la imagen siempre se muestren:
 
-// En la cabecera de la tarjeta:
-const badgeHTML = `
-  <span class="order-status-badge ${estadoInfo.clase}" 
-        style="padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; background: ${estiloBadge.bg}; color: ${estiloBadge.color}; text-transform: uppercase;">
-    ${estadoInfo.texto}
-  </span>
-`;
+const prodId = item.id_producto || item.id;
+const prodInfo = (window.PRODUCTS || []).find(p => String(p.id) === String(prodId)) || {};
 
-Auto-refresco: Al final de pedidos.html, añadir un intervalo para que la pantalla refresque los estados automáticamente cada 30 segundos sin que el usuario tenga que recargar la página:
-// Refrescar estados cada 30 segundos
-setInterval(() => {
-  if (typeof cargarVistaPedidos === 'function') {
-    cargarVistaPedidos();
+const title = item.nombre_producto || prodInfo.title || prodInfo.nombre || 'Tote Bag Artesanal';
+const img = prodInfo.image || prodInfo.imagen || item.imagen_url || item.imagen || 'img/placeholder.jpg';
+const qty = item.cantidad || item.quantity || 1;
+const price = Number(item.precio_unitario || item.price || 0).toFixed(2);
+const subtotal = (qty * price).toFixed(2);
+
+2. SOLUCIÓN AL CONTADOR EN CERO AL IR A PERFIL (perfil.html y app.js)
+Causa: Al navegar a perfil.html, updateBadges() consulta únicamente el localStorage local (que en Vercel puede no tener la clave sincronizada) o no espera a Supabase, reseteando Mis Pedidos a (0).
+
+Acción:
+En app.js, dentro de la lógica que calcula el contador de ordersCountNav:
+
+Si la sesión está activa (toteart_user), intentar leer de toteart_orders.
+
+Si toteart_orders no tiene registros, consultar asíncronamente en Supabase la cantidad exacta de pedidos del usuario sin bloquear la página:
+
+async function refrescarContadorPedidos() {
+  const badge = document.getElementById('ordersCountNav');
+  if (!badge) return;
+
+  let session = {};
+  try { session = JSON.parse(localStorage.getItem('toteart_user') || '{}'); } catch(e) {}
+  const activeId = session.id_cliente || session.id_usuario;
+
+  if (!activeId) {
+    badge.textContent = '0';
+    return;
   }
-}, 60000);
+
+  // 1. Intentar desde caché local
+  try {
+    const local = JSON.parse(localStorage.getItem('toteart_orders') || '[]');
+    const myOrders = local.filter(o => 
+      (o.id_cliente === activeId || o.idCliente === activeId || (session.email && o.customerEmail === session.email))
+    );
+    if (myOrders.length > 0) {
+      badge.textContent = myOrders.length;
+      return;
+    }
+  } catch(e) {}
+
+  // 2. Si no hay en local, consultar en Supabase
+  if (window.supabaseClient) {
+    try {
+      const { count, error } = await window.supabaseClient
+        .from('pedidos')
+        .select('*', { count: 'exact', head: true })
+        .eq('id_cliente', activeId);
+
+      if (!error && count !== null) {
+        badge.textContent = count;
+      }
+    } catch(err) {}
+  }
+}
+
+Asegurar que updateBadges() en perfil.html invoque esta validación.
+
+3. RUTAS Y ARCHIVOS EN ENTORNO LINUX (VERCEL)
+Revisa que las referencias a imágenes (img/...), scripts (js/...) y hojas de estilo mantengan rutas relativas coherentes (img/foto.jpg o ./img/foto.jpg) sin mayúsculas/minúsculas inconsistentes con los nombres reales de los archivos en disco.

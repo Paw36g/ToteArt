@@ -246,6 +246,8 @@
         return;
       }
       syncProfileData();
+      if (typeof updateBadges === 'function') updateBadges();
+      if (typeof refrescarContadorPedidos === 'function') refrescarContadorPedidos();
     });
 
     function showEditProfileView() {
