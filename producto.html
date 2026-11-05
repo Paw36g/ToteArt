@@ -121,21 +121,42 @@
       <div class="reviews-header-row">
         <div>
           <h2 class="section-title" id="pdpReviewsHeading" style="font-size: 18px; margin-bottom: 4px;">Reseñas de clientes</h2>
-          <div class="product-rating" style="margin-bottom: 0;">
-            <span class="star" style="color:#D97706" aria-hidden="true">★</span>
-            <span id="pdpReviewsAvgText">4.8</span>
+          <div class="product-rating" style="margin-bottom: 0; display: flex; align-items: center; gap: 8px;">
+            <span class="star product-stars-visual" id="productAverageStars" style="color:#F5A623; font-size: 1.1rem;" aria-hidden="true">★★★★★</span>
+            <span id="productAverageRatingText" class="product-rating-score" style="font-weight: 700; color: var(--text-main);">5.0 / 5</span>
+            <span id="productReviewsCountText" class="product-reviews-count" style="font-size: 13px; color: var(--text-muted);">(0 reseñas)</span>
+            <span id="pdpReviewsAvgText" style="display:none;">5.0</span>
           </div>
         </div>
       </div>
 
       <!-- Lista de comentarios registrados -->
-      <div id="pdpReviewsList" class="reviews-list-container">
+      <div id="reviewsListContainer" class="reviews-list reviews-list-container">
         <p class="reviews-empty-text">Este diseño aún no tiene comentarios escritos.</p>
       </div>
 
-      <!-- Bloque de calificación para el usuario (condicionado a compra verificada) -->
+      <!-- Bloque de calificación para el usuario -->
       <div id="pdpUserReviewBlock" style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border);">
-        <!-- Renderizado dinámico según si compró o no el producto -->
+        <form class="review-form-box" style="margin-top:0;" onsubmit="manejarEnvioResena(event)">
+          <h3 style="font-size:16px; font-weight:700; color:var(--brand); margin-bottom:12px;">Califica este producto</h3>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <div class="star-selector rating-stars-picker" id="pdpStarSelector" role="radiogroup" aria-label="Califica de 1 a 5 estrellas" data-selected-rating="5">
+              <button type="button" class="star-select-btn active" data-star="1" onclick="selectPdpStar(1)" aria-label="1 estrella">★</button>
+              <button type="button" class="star-select-btn active" data-star="2" onclick="selectPdpStar(2)" aria-label="2 estrellas">★</button>
+              <button type="button" class="star-select-btn active" data-star="3" onclick="selectPdpStar(3)" aria-label="3 estrellas">★</button>
+              <button type="button" class="star-select-btn active" data-star="4" onclick="selectPdpStar(4)" aria-label="4 estrellas">★</button>
+              <button type="button" class="star-select-btn active" data-star="5" onclick="selectPdpStar(5)" aria-label="5 estrellas">★</button>
+              <span class="star-selector-label" id="pdpStarValueLabel">5 de 5 estrellas</span>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="reviewCommentInput" style="display:block; margin-bottom:6px; font-size:14px; color:var(--text-main);">¿Deseas dejar un comentario? (opcional)</label>
+            <textarea class="form-control" id="reviewCommentInput" rows="3" placeholder="Cuéntanos qué te pareció el bordado..." style="width:100%; padding:10px; border-radius:6px; border:1px solid var(--border); font-family:inherit;"></textarea>
+          </div>
+          <button type="submit" class="btn-checkout-primary" id="btnPdpPublishReview" style="width:auto; padding:10px 22px;">
+            Publicar reseña
+          </button>
+        </form>
       </div>
     </section>
   </main>
@@ -271,6 +292,10 @@
 
     function selectPdpStar(starVal) {
       pdpSelectedStar = Math.min(5, Math.max(1, Number(starVal) || 5));
+      const starPicker = document.querySelector('.rating-stars-picker');
+      if (starPicker) {
+        starPicker.dataset.selectedRating = String(pdpSelectedStar);
+      }
       document.querySelectorAll('#pdpStarSelector .star-select-btn').forEach(btn => {
         const val = Number(btn.getAttribute('data-star'));
         btn.classList.toggle('active', val <= pdpSelectedStar);
@@ -281,113 +306,166 @@
       }
     }
 
-    async function handlePdpReviewSubmit(e) {
-      e.preventDefault();
-      if (!currentProduct) return;
-      const textarea = document.getElementById('pdpReviewTextarea');
-      const comentarioRaw = textarea ? textarea.value.trim() : '';
-      const comentario = comentarioRaw.length > 0 ? comentarioRaw : null;
+    async function manejarEnvioResena(e) {
+      if (e) e.preventDefault();
 
-      const btn = document.getElementById('btnPdpPublishReview');
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = 'Publicando...';
+      const commentInput = document.getElementById('reviewCommentInput') || document.getElementById('comentarioResena');
+      const commentText = commentInput ? commentInput.value.trim() : '';
+
+      // Capturar estrellas seleccionadas
+      let rating = 0;
+      const starChecked = document.querySelector('input[name="rating_stars"]:checked');
+      if (starChecked) {
+        rating = parseInt(starChecked.value, 10);
+      } else {
+        const starPicker = document.querySelector('.rating-stars-picker');
+        rating = starPicker ? parseInt(starPicker.dataset.selectedRating || '0', 10) : 0;
+      }
+      if (!rating && typeof pdpSelectedStar === 'number') {
+        rating = pdpSelectedStar;
       }
 
-      await submitProductReview({
-        productId: currentProduct.id,
-        calificacion: pdpSelectedStar,
-        comentario: comentario
-      });
+      if (!rating || rating < 1 || rating > 5) {
+        alert("Por favor selecciona una calificación de 1 a 5 estrellas antes de publicar.");
+        return;
+      }
 
-      await renderPdpReviewsSection();
-    }
+      // Identificar usuario activo o autor
+      const session = JSON.parse(localStorage.getItem('toteart_user') || '{}');
+      const autor = session.nombres ? `${session.nombres} ${session.apellidos || ''}`.trim() :
+                    (session.nombre || 'Cliente ToteArt');
 
-    async function renderPdpReviewsSection() {
-      if (!currentProduct) return;
-      const listEl = document.getElementById('pdpReviewsList');
-      const userBlockEl = document.getElementById('pdpUserReviewBlock');
-      const ratingElem = document.getElementById('pdpRatingText');
-      const reviewsAvgEl = document.getElementById('pdpReviewsAvgText');
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentProductId = urlParams.get('id') || window.CURRENT_PRODUCT_ID || (currentProduct ? currentProduct.id : null);
 
-      const reviews = (typeof fetchReviewsFromDatabase === 'function')
-        ? await fetchReviewsFromDatabase(currentProduct.id)
-        : [];
+      if (!currentProductId) {
+        console.error("No se localizó el identificador del producto actual.");
+        return;
+      }
 
-      const summary = (typeof getProductRatingSummary === 'function')
-        ? getProductRatingSummary(currentProduct.id)
-        : { text: (currentProduct.rating || 4.8).toFixed(1) };
+      const payload = {
+        id_producto: String(currentProductId),
+        id_cliente: session.id_cliente || null,
+        nombre_autor: autor,
+        calificacion: rating,
+        comentario: commentText
+      };
 
-      if (ratingElem) ratingElem.textContent = summary.text;
-      if (reviewsAvgEl) reviewsAvgEl.textContent = summary.text;
-
-      // 1. Mostrar tarjetas compactas de reseñas o mensaje cuando no hay comentarios escritos
-      const writtenReviews = (reviews || []).filter(r => r && String(r.comentario || '').trim().length > 0);
-      if (listEl) {
-        if (writtenReviews.length === 0) {
-          listEl.innerHTML = `<p class="reviews-empty-text">Este diseño aún no tiene comentarios escritos.</p>`;
-        } else {
-          listEl.innerHTML = writtenReviews.map(r => {
-            const stars = '★'.repeat(Math.min(5, Math.max(1, Number(r.calificacion) || 5)));
-            const dateStr = r.fecha_resena
-              ? new Date(r.fecha_resena).toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' })
-              : '';
-            return `
-              <article class="review-card-item">
-                <div class="review-item-header">
-                  <div>
-                    <strong class="review-author-name">${escapeHtmlPdp(r.nombre_cliente || r.id_cliente || 'Comprador verificado')}</strong>
-                    <span class="review-verified-tag">Compra verificada</span>
-                  </div>
-                  <span class="review-item-date">${escapeHtmlPdp(dateStr)}</span>
-                </div>
-                <div class="review-item-stars" style="color:#D97706" aria-label="${Number(r.calificacion) || 5} de 5 estrellas">${stars}</div>
-                <p class="review-item-comment">${escapeHtmlPdp(r.comentario)}</p>
-              </article>
-            `;
-          }).join('');
+      // 1. Guardar en Supabase
+      let guardadoEnNube = false;
+      if (window.supabaseClient) {
+        try {
+          const { error } = await window.supabaseClient.from('resenas').insert([payload]);
+          if (!error) guardadoEnNube = true;
+        } catch (err) {
+          console.warn('[Reseñas] Fallback local por error en Supabase:', err);
         }
       }
 
-      // 2. Verificar si el usuario actual compró este producto (pedidos + detalle_pedidos)
-      if (userBlockEl) {
-        const purchased = (typeof hasClientPurchasedProduct === 'function')
-          ? await hasClientPurchasedProduct(currentProduct.id)
-          : false;
+      // 2. Respaldo local para persistencia inmediata
+      try {
+        const localKey = `toteart_reviews_${currentProductId}`;
+        const localReviews = JSON.parse(localStorage.getItem(localKey) || '[]');
+        localReviews.unshift({
+          ...payload,
+          fecha_resena: new Date().toISOString()
+        });
+        localStorage.setItem(localKey, JSON.stringify(localReviews));
+      } catch (storageErr) {}
 
-        if (purchased) {
-          pdpSelectedStar = 5;
-          userBlockEl.innerHTML = `
-            <form class="review-form-box" style="margin-top:0;" onsubmit="handlePdpReviewSubmit(event)">
-              <h3 style="font-size:16px; font-weight:700; color:var(--brand); margin-bottom:12px;">Califica este producto</h3>
-              <div class="form-group">
-                <div class="star-selector" id="pdpStarSelector" role="radiogroup" aria-label="Califica de 1 a 5 estrellas">
-                  <button type="button" class="star-select-btn active" data-star="1" onclick="selectPdpStar(1)" aria-label="1 estrella">★</button>
-                  <button type="button" class="star-select-btn active" data-star="2" onclick="selectPdpStar(2)" aria-label="2 estrellas">★</button>
-                  <button type="button" class="star-select-btn active" data-star="3" onclick="selectPdpStar(3)" aria-label="3 estrellas">★</button>
-                  <button type="button" class="star-select-btn active" data-star="4" onclick="selectPdpStar(4)" aria-label="4 estrellas">★</button>
-                  <button type="button" class="star-select-btn active" data-star="5" onclick="selectPdpStar(5)" aria-label="5 estrellas">★</button>
-                  <span class="star-selector-label" id="pdpStarValueLabel">5 de 5 estrellas</span>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="pdpReviewTextarea">¿Deseas dejar un comentario? (opcional)</label>
-                <textarea class="form-control" id="pdpReviewTextarea" rows="3" placeholder="Cuéntanos qué te pareció el bordado..."></textarea>
-              </div>
-              <button type="submit" class="btn-checkout-primary" id="btnPdpPublishReview" style="width:auto; padding:10px 22px;">
-                Publicar reseña
-              </button>
-            </form>
-          `;
-        } else {
-          userBlockEl.innerHTML = `
-            <div class="review-verify-msg" role="status" style="margin-top:0;">
-              Solo compradores verificados de este diseño pueden dejar un comentario.
+      alert("¡Gracias por tu valoración! Tu reseña ha sido registrada.");
+      if (commentInput) commentInput.value = '';
+      
+      // Recalcular y renderizar de inmediato
+      await cargarResenasYPromedio(currentProductId);
+    }
+
+    async function cargarResenasYPromedio(productId) {
+      let reviews = [];
+
+      // 1. Consultar Supabase
+      if (window.supabaseClient) {
+        try {
+          const { data, error } = await window.supabaseClient
+            .from('resenas')
+            .select('*')
+            .eq('id_producto', String(productId))
+            .order('fecha_resena', { ascending: false });
+
+          if (!error && Array.isArray(data) && data.length > 0) {
+            reviews = data;
+          }
+        } catch (e) {}
+      }
+
+      // 2. Respaldo local si la base no devolvió datos
+      if (reviews.length === 0) {
+        try {
+          const localKey = `toteart_reviews_${productId}`;
+          reviews = JSON.parse(localStorage.getItem(localKey) || '[]');
+        } catch(e) {}
+      }
+
+      // 3. Cálculo dinámico de promedio
+      const total = reviews.length;
+      let promedio = 5.0;
+      if (total > 0) {
+        const suma = reviews.reduce((acc, r) => acc + (Number(r.calificacion) || 0), 0);
+        promedio = (suma / total).toFixed(1);
+      }
+
+      // 4. Actualizar textos de promedio en la cabecera del producto
+      const avgTextElem = document.getElementById('productAverageRatingText') || document.querySelector('.product-rating-score');
+      const countTextElem = document.getElementById('productReviewsCountText') || document.querySelector('.product-reviews-count');
+      const starsElem = document.getElementById('productAverageStars') || document.querySelector('.product-stars-visual');
+
+      if (avgTextElem) avgTextElem.textContent = `${promedio} / 5`;
+      if (countTextElem) countTextElem.textContent = `(${total} reseña${total === 1 ? '' : 's'})`;
+      if (starsElem) {
+        const full = Math.round(Number(promedio));
+        starsElem.innerHTML = '★'.repeat(full) + '☆'.repeat(5 - full);
+        starsElem.style.color = '#F5A623';
+      }
+
+      // Sincronizar también con la calificación de la ficha superior
+      const topRatingText = document.getElementById('pdpRatingText');
+      if (topRatingText) topRatingText.textContent = promedio;
+
+      // 5. Renderizar lista de comentarios y puntuaciones
+      const container = document.getElementById('reviewsListContainer') || document.querySelector('.reviews-list');
+      if (container) {
+        if (total === 0) {
+          container.innerHTML = `
+            <div style="padding: 20px 0; color: #7a7672; font-style: italic;">
+              Este tote bag aún no tiene opiniones. ¡Sé el primero en calificarlo!
             </div>
           `;
+          return;
         }
+
+        container.innerHTML = reviews.map(rev => {
+          const fecha = new Date(rev.fecha_resena || Date.now()).toLocaleDateString('es-EC', {
+            day: 'numeric', month: 'short', year: 'numeric'
+          });
+          const calif = Math.min(5, Math.max(1, Number(rev.calificacion) || 5));
+          const estrellas = '★'.repeat(calif) + '☆'.repeat(5 - calif);
+
+          return `
+            <div class="review-item" style="border-bottom: 1px solid #f0eee9; padding: 16px 0;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="color: #2E4A3D; font-size: 0.95rem;">${rev.nombre_autor || rev.nombre_cliente || 'Cliente ToteArt'}</strong>
+                <span style="font-size: 0.8rem; color: #9c9792;">${fecha}</span>
+              </div>
+              <div style="color: #F5A623; margin-bottom: 6px; font-size: 0.95rem;">${estrellas}</div>
+              ${rev.comentario ? `<p style="margin: 0; color: #444; font-size: 0.9rem; line-height: 1.5;">${rev.comentario}</p>` : ''}
+            </div>
+          `;
+        }).join('');
       }
     }
+
+    const renderPdpReviewsSection = (pid) => cargarResenasYPromedio(pid || (currentProduct ? currentProduct.id : window.CURRENT_PRODUCT_ID));
+    const handlePdpReviewSubmit = manejarEnvioResena;
 
     function renderPdpRecommendations() {
       const relatedGrid = document.getElementById('pdpRelatedGrid');
@@ -467,11 +545,19 @@
       renderPdpRecommendations();
 
       // Cargar y renderizar reseñas en #pdpReviewsContainer
-      renderPdpReviewsSection();
+      if (currentProduct) {
+        window.CURRENT_PRODUCT_ID = currentProduct.id;
+        cargarResenasYPromedio(currentProduct.id);
+      }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       initPdpViewFromProducts();
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentProductId = urlParams.get('id') || (currentProduct ? currentProduct.id : 1);
+      window.CURRENT_PRODUCT_ID = currentProductId;
+      await cargarResenasYPromedio(currentProductId);
+
       // Sincronizar estado del botón de favoritos con Supabase
       if (typeof syncWishlistFromCloud === 'function') {
         syncWishlistFromCloud().then(list => {
@@ -482,5 +568,105 @@
       }
     });
   </script>
+  <!-- Footer Secundario ToteArt -->
+  <footer class="site-footer" style="background: #2E4A3D; color: #f4f1ea; padding: 48px 24px 24px; margin-top: 60px; font-family: inherit;">
+    <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 36px; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.12);">
+      
+      <!-- Columna 1: Marca, Identidad y Pagos -->
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+          <img src="img/logo.png" alt="ToteArt" style="width: 32px; height: 32px; object-fit: contain; filter: brightness(0) invert(1);" onerror="this.style.display='none'">
+          <span style="font-size: 1.3rem; font-weight: 700; color: #fff; letter-spacing: 0.5px;">ToteArt</span>
+        </div>
+        <p style="font-size: 0.9rem; line-height: 1.5; color: #d0c9be; margin-bottom: 16px;">
+          Tote bags de lienzo 100% algodón bordados a mano. Cada pieza es única, resistente y sustentable.
+        </p>
+        <div style="font-size: 0.85rem; color: #b8b0a2; margin-bottom: 16px;">
+          📍 Hecho a mano en Quito, Ecuador.
+        </div>
+        <!-- Métodos de pago aceptados -->
+        <div>
+          <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #a9a294; display: block; margin-bottom: 8px;">Métodos de pago seguros</span>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <span style="background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Transferencia</span>
+            <span style="background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Deuna</span>
+            <span style="background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Tarjetas Débito / Crédito</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna 2: Cuidados y Envíos -->
+      <div>
+        <h4 style="color: #fff; font-size: 1rem; margin-bottom: 16px; font-weight: 600;">Cuidados y Despacho</h4>
+        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9rem; line-height: 1.8; color: #d0c9be;">
+          <li style="margin-bottom: 10px;">
+            <a href="javascript:void(0)" onclick="abrirModalCuidados()" style="color: #E2B97F; text-decoration: underline; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
+              <span>🧺 ¿Cómo lavar tu tote bag bordado?</span>
+            </a>
+          </li>
+          <li style="margin-bottom: 8px;">
+            🚚 <strong>Envíos a todo el país:</strong> Cobertura nacional a domicilio mediante <em>Servientrega</em>.
+          </li>
+          <li>
+            🏢 <strong>Retiro sin costo:</strong> En nuestro taller en Quito (Av. Amazonas N34-120 y Gaspar de Villarroel).
+          </li>
+        </ul>
+      </div>
+
+      <!-- Columna 3: Atención y Horarios -->
+      <div>
+        <h4 style="color: #fff; font-size: 1rem; margin-bottom: 16px; font-weight: 600;">Atención y Taller</h4>
+        <div style="font-size: 0.9rem; line-height: 1.6; color: #d0c9be;">
+          <p style="margin: 0 0 10px;">
+            <strong>Horario de atención:</strong><br>
+            Lunes a Sábado: 10:00 a 18:00
+          </p>
+          <p style="margin: 0 0 14px;">
+            <strong>¿Dudas o pedidos personalizados?</strong><br>
+            Escríbenos directamente para asesorarte con tu diseño.
+          </p>
+          <a href="https://wa.me/593999999999?text=Hola%20ToteArt,%20deseo%20consultar%20sobre%20un%20pedido" target="_blank" rel="noopener noreferrer" 
+             style="display: inline-flex; align-items: center; gap: 8px; background: #25D366; color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">
+            <span>💬 Contactar por WhatsApp</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Copyright Inferior -->
+    <div style="max-width: 1200px; margin: 0 auto; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; color: #9c9486;">
+      <div>© 2026 ToteArt. Todos los derechos reservados.</div>
+      <div>Diseñado con algodón orgánico y bordado artesanal ecuatoriano.</div>
+    </div>
+  </footer>
+
+  <!-- Modal de Cuidados del Tote Bag -->
+  <div id="modalCuidadosTote" style="display:none; position:fixed; z-index:9999; inset:0; background:rgba(0,0,0,0.55); align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(3px);">
+    <div style="background:#fff; color:#2E4A3D; max-width:520px; width:100%; border-radius:12px; padding:28px; box-shadow:0 10px 25px rgba(0,0,0,0.2); position:relative;">
+      <button onclick="cerrarModalCuidados()" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#777;">&times;</button>
+      
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+        <span style="font-size:1.6rem;">🧺</span>
+        <h3 style="margin:0; font-size:1.25rem; color:#2E4A3D;">Guía de Lavado y Cuidado</h3>
+      </div>
+      
+      <p style="font-size:0.9rem; color:#555; line-height:1.5; margin-bottom:16px;">
+        Para proteger los hilos del bordado y conservar el lienzo de algodón en perfecto estado por años:
+      </p>
+
+      <ul style="font-size:0.88rem; color:#444; line-height:1.6; padding-left:20px; margin-bottom:20px;">
+        <li style="margin-bottom:8px;"><strong>Lavar siempre al revés:</strong> Da la vuelta al tote bag para evitar fricción directa sobre las puntadas.</li>
+        <li style="margin-bottom:8px;"><strong>Agua fría y ciclo suave:</strong> Lava a mano o en lavadora en ciclo delicado con agua fría (máx 30°C).</li>
+        <li style="margin-bottom:8px;"><strong>Detergente neutro:</strong> Evita blanqueadores o cloro que desgasten los colores del hilo.</li>
+        <li style="margin-bottom:8px;"><strong>Secado al aire libre:</strong> No uses secadora automática. Seca a la sombra en superficie plana.</li>
+        <li><strong>Planchado:</strong> Planchar del lado del revés o colocando una tela de algodón limpia sobre el bordado.</li>
+      </ul>
+
+      <button onclick="cerrarModalCuidados()" class="btn-primary" style="width:100%; padding:10px; background:#2E4A3D; color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer;">
+        Entendido
+      </button>
+    </div>
+  </div>
 </body>
 </html>

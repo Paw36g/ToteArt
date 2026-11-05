@@ -1186,3 +1186,25 @@ document.addEventListener('DOMContentLoaded', () => {
     initRealtimeSearchDropdown(searchInput);
   }
 });
+
+/* --------------------------------------------------------------------------
+   MODAL DE CUIDADOS DEL TOTE BAG
+   -------------------------------------------------------------------------- */
+function abrirModalCuidados() {
+  const modal = document.getElementById('modalCuidadosTote');
+  if (modal) modal.style.display = 'flex';
+}
+
+function cerrarModalCuidados() {
+  const modal = document.getElementById('modalCuidadosTote');
+  if (modal) modal.style.display = 'none';
+}
+
+// Cerrar con Escape o clic exterior
+window.addEventListener('click', (e) => {
+  const modal = document.getElementById('modalCuidadosTote');
+  if (e.target === modal) cerrarModalCuidados();
+});
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') cerrarModalCuidados();
+});
