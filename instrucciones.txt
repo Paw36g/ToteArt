@@ -1,65 +1,93 @@
-### DIRECTIVA DE AJUSTE QUIRÚRGICO: FOOTER (LOGO, TARJETAS Y ELIMINACIÓN DE WHATSAPP)
+### DIRECTIVA DE CORRECCIÓN: BOTONES CAFÉ, PASO DIRECTO AL RECIBO Y RESTRICCIÓN DEL PRELOADER
 
-**REGLA:** No modificar estilos de `styles.css`, la base de datos de Supabase, la lógica de órdenes, ni las reseñas. Modifica exclusivamente los bloques del footer en los archivos HTML donde fue insertado (`catalogo.html`, `producto.html`, `lista.html`, `pedidos.html`, `perfil.html`, `checkout.html`, etc.).
+**REGLA DE CONSERVACIÓN:**
+- Prohibido tocar la base de datos de Supabase, las validaciones de stock, la tabla de órdenes o las credenciales.
+- Trabajar exclusivamente en:
+  1. Restaurar el color café original en los botones de modales y cierres.
+  2. Eliminar esperas artificiales en la pasarela de pago para pasar de inmediato al recibo al confirmarse.
+  3. Limitar el preloader para que no aparezca en cada cambio de pantalla (navegación interna).
 
 ---
 
-#### 1. ELIMINACIÓN DEL BLOQUE DE WHATSAPP
-Localiza en la Columna 3 del footer el bloque de dudas y el botón verde de WhatsApp:
-- Elimina el texto `"¿Dudas o pedidos personalizados? Escríbenos directamente..."` y el enlace `<a ...>Contactar por WhatsApp</a>`.
-- Mantén únicamente la información de horarios de atención del taller físico:
-  ```html
-  <div>
-    <h4 style="color: #fff; font-size: 1rem; margin-bottom: 16px; font-weight: 600;">Atención y Taller</h4>
-    <div style="font-size: 0.9rem; line-height: 1.6; color: #d0c9be;">
-      <p style="margin: 0 0 10px;">
-        <strong>Horario de atención:</strong><br>
-        Lunes a Sábado: 10:00 a 18:00
-      </p>
-      <p style="margin: 0; color: #b8b0a2;">
-        Visítanos en nuestro punto físico en Quito para conocer nuestros diseños y retiros sin costo.
-      </p>
-    </div>
-  </div>
+#### 1. RESTAURACIÓN DEL COLOR CAFÉ EN BOTONES DE MODALES
+Reemplazar el fondo verde (`#2E4A3D`) de los botones de acción y cierre en los modales (`#modalAyuda`, `#modalConocenos`, `#modalCuidadosTote`) para devolverles el tono café original de la interfaz:
 
-2. CORRECCIÓN DEL LOGO DE TOTEART
-Actualmente se muestra un cuadro blanco sólido debido a una ruta incorrecta (img/logo.png) y al filtro filter: brightness(0) invert(1).
+- Cambiar `background: #2E4A3D;` por:
+  ```css
+  background: #5C3D2E; color: #FAF8F5;
 
-El archivo del logo se encuentra en la carpeta de imágenes con el nombre logo toteart (verificar extensiones .png, .jpg o .webp).
+Si tu proyecto utiliza una variable o clase global como .btn-primary (definida en styles.css con el café institucional), asegurar que los botones de los modales lleven la clase limpia sin estilos en línea que la sobreescriban:
 
-Reemplazar la etiqueta del logo en la cabecera del footer por una llamada limpia sin filtros que distorsionen los colores reales:
+<button onclick="cerrarModalAyuda()" class="btn-primary" style="width:100%; margin-top:20px; padding:10px; background:#5C3D2E; color:#FAF8F5; border:none; border-radius:6px; font-weight:600; cursor:pointer;">
+  Cerrar
+</button>
 
-<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
-  <img src="img/logo toteart.png" 
-       alt="ToteArt Logo" 
-       style="width: 36px; height: 36px; object-fit: contain; border-radius: 6px;" 
-       onerror="this.onerror=null; this.src='img/logo toteart.jpg';">
-  <span style="font-size: 1.3rem; font-weight: 700; color: #fff; letter-spacing: 0.5px;">ToteArt</span>
-</div>
+2. PAGO: PROCESAMIENTO Y PASE DIRECTO AL RECIBO (checkout.html)
+El usuario no debe esperar en pantallas intermedias una vez autorizada la transacción.
 
-<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
-  <img src="img/logo toteart.png" 
-       alt="ToteArt Logo" 
-       style="width: 36px; height: 36px; object-fit: contain; border-radius: 6px;" 
-       onerror="this.onerror=null; this.src='img/logo toteart.jpg';">
-  <span style="font-size: 1.3rem; font-weight: 700; color: #fff; letter-spacing: 0.5px;">ToteArt</span>
-</div>
+Modificar la simulación del pago para que:
 
-3. ACTUALIZACIÓN: MÉTODOS DE PAGO ACEPTADOS Y TARJETAS
-Modificar el título y desglosar las tarjetas de crédito/débito soportadas junto a los métodos locales:
+Muestre únicamente el indicador de "Procesando pago..." mientras se validan y guardan los datos en segundo plano.
 
-Reemplazar el bloque de pagos por:
+En cuanto el guardado concluya con éxito, cierre el indicador y despliegue el recibo de compra inmediatamente, sin pausas adicionales:
 
-<div>
-  <span style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.6px; color: #d0c9be; font-weight: 600; display: block; margin-bottom: 10px;">
-    MÉTODOS DE PAGO ACEPTADOS
-  </span>
-  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-    <span style="background: rgba(255,255,255,0.12); color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px;">Visa</span>
-    <span style="background: rgba(255,255,255,0.12); color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px;">Mastercard</span>
-    <span style="background: rgba(255,255,255,0.12); color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px;">Diners Club</span>
-    <span style="background: rgba(255,255,255,0.12); color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px;">Discover</span>
-    <span style="background: rgba(255,255,255,0.12); color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px;">Deuna</span>
-    <span style="background: rgba(255,255,255,0.12); color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px;">Transferencia</span>
-  </div>
-</div>
+async function procesarPagoDirecto(guardarOrdenCallback) {
+  const modal = document.getElementById('paymentSimulationModal');
+  const content = document.getElementById('paymentSimContent');
+  
+  if (modal && content) {
+    modal.style.display = 'flex';
+    content.innerHTML = `
+      <div style="width:42px; height:42px; border:3px solid #EADBCC; border-top-color:#5C3D2E; border-radius:50%; animation:toteartSpin 0.7s linear infinite; margin:0 auto 14px;"></div>
+      <h3 style="margin:0 0 6px; color:#5C3D2E; font-size:1.15rem; font-weight:700;">Procesando pago...</h3>
+      <p style="margin:0; font-size:0.85rem; color:#7A6E65;">Validando con la pasarela de pago y registrando tu orden.</p>
+    `;
+  }
+
+  try {
+    // Ejecutar el guardado real de la orden en Supabase / LocalStorage
+    await guardarOrdenCallback();
+  } finally {
+    // Ocultar modal de procesamiento de inmediato
+    if (modal) modal.style.display = 'none';
+  }
+
+  // Desplegar recibo / comprobante de inmediato
+  mostrarReciboCompra();
+}
+
+3. PRELOADER: MOSTRAR SOLO AL INICIAR LA WEB O AL ACTUALIZAR (app.js)
+El preloader no debe bloquear al usuario cuando hace clic entre enlaces de la tienda (Catálogo, Producto, Mis Pedidos, etc.). Solo debe ejecutarse cuando se entra por primera vez a la tienda o cuando el usuario presiona refrescar/actualizar la página (F5 o recargar).
+
+Actualizar la lógica del preloader en app.js (o en el script donde esté inicializado):
+
+(function gestionarPreloader() {
+  const preloader = document.getElementById('toteartPreloader');
+  if (!preloader) return;
+
+  // Detectar si la página fue recargada manualmente por el usuario
+  const navEntries = performance.getEntriesByType('navigation');
+  const esRecarga = navEntries.length > 0 && navEntries[0].type === 'reload';
+  
+  // Detectar si es la primera apertura en la sesión actual
+  const esPrimeraApertura = !sessionStorage.getItem('toteart_sitio_iniciado');
+
+  if (esPrimeraApertura || esRecarga) {
+    // Marcar como iniciado para la sesión
+    sessionStorage.setItem('toteart_sitio_iniciado', 'true');
+
+    // Desvanecer normalmente
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        preloader.style.opacity = '0';
+        setTimeout(() => {
+          preloader.style.display = 'none';
+        }, 300);
+      }, 400);
+    });
+  } else {
+    // Si es navegación entre pantallas internas, suprimir inmediatamente sin animación
+    preloader.style.display = 'none';
+  }
+})();
+

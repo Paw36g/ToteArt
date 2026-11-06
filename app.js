@@ -1200,11 +1200,88 @@ function cerrarModalCuidados() {
   if (modal) modal.style.display = 'none';
 }
 
-// Cerrar con Escape o clic exterior
+/* --------------------------------------------------------------------------
+   MODAL "CONÓCENOS"
+   -------------------------------------------------------------------------- */
+function abrirModalConocenos() {
+  const m = document.getElementById('modalConocenos');
+  if (m) m.style.display = 'flex';
+}
+
+function cerrarModalConocenos() {
+  const m = document.getElementById('modalConocenos');
+  if (m) m.style.display = 'none';
+}
+
+/* --------------------------------------------------------------------------
+   MODAL DE AYUDA / FAQ
+   -------------------------------------------------------------------------- */
+function abrirModalAyuda() {
+  const m = document.getElementById('modalAyuda');
+  if (m) m.style.display = 'flex';
+}
+
+function cerrarModalAyuda() {
+  const m = document.getElementById('modalAyuda');
+  if (m) m.style.display = 'none';
+}
+
+// Cerrar modales con clic exterior o tecla Escape
 window.addEventListener('click', (e) => {
-  const modal = document.getElementById('modalCuidadosTote');
-  if (e.target === modal) cerrarModalCuidados();
+  const modalCuidados = document.getElementById('modalCuidadosTote');
+  if (e.target === modalCuidados) cerrarModalCuidados();
+  const modalConocenos = document.getElementById('modalConocenos');
+  if (e.target === modalConocenos) cerrarModalConocenos();
+  const modalAyuda = document.getElementById('modalAyuda');
+  if (e.target === modalAyuda) cerrarModalAyuda();
 });
+
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') cerrarModalCuidados();
+  if (e.key === 'Escape') {
+    cerrarModalCuidados();
+    cerrarModalConocenos();
+    cerrarModalAyuda();
+  }
 });
+
+if (typeof window !== 'undefined') {
+  window.abrirModalCuidados = abrirModalCuidados;
+  window.cerrarModalCuidados = cerrarModalCuidados;
+  window.abrirModalConocenos = abrirModalConocenos;
+  window.cerrarModalConocenos = cerrarModalConocenos;
+  window.abrirModalAyuda = abrirModalAyuda;
+  window.cerrarModalAyuda = cerrarModalAyuda;
+}
+
+/* --------------------------------------------------------------------------
+   PANTALLA DE CARGA INICIAL (SPLASH SCREEN / PRELOADER)
+   -------------------------------------------------------------------------- */
+(function gestionarPreloader() {
+  const preloader = document.getElementById('toteartPreloader');
+  if (!preloader) return;
+
+  // Detectar si la página fue recargada manualmente por el usuario
+  const navEntries = performance.getEntriesByType('navigation');
+  const esRecarga = navEntries.length > 0 && navEntries[0].type === 'reload';
+  
+  // Detectar si es la primera apertura en la sesión actual
+  const esPrimeraApertura = !sessionStorage.getItem('toteart_sitio_iniciado');
+
+  if (esPrimeraApertura || esRecarga) {
+    // Marcar como iniciado para la sesión
+    sessionStorage.setItem('toteart_sitio_iniciado', 'true');
+
+    // Desvanecer normalmente
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        preloader.style.opacity = '0';
+        setTimeout(() => {
+          preloader.style.display = 'none';
+        }, 300);
+      }, 400);
+    });
+  } else {
+    // Si es navegación entre pantallas internas, suprimir inmediatamente sin animación
+    preloader.style.display = 'none';
+  }
+})();
