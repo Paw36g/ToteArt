@@ -681,6 +681,41 @@ function setCurrentUser(user) {
   } catch (e) {}
 }
 
+/* --------------------------------------------------------------------------
+   LIMPIEZA DE DATOS DEL USUARIO EN EL NAVEGADOR
+   Al cerrar sesión no debe quedar nada del usuario en este dispositivo:
+   carrito, lista, pedidos ni credenciales locales. Lista y pedidos viven en
+   Supabase y se vuelven a descargar al iniciar sesión.
+   -------------------------------------------------------------------------- */
+const USER_SCOPED_KEYS = [
+  'toteart_user',
+  'toteart_cart',
+  'toteart_wishlist',
+  'toteart_orders',
+  'toteart_registered_users'
+];
+
+function clearUserLocalData() {
+  USER_SCOPED_KEYS.forEach(k => {
+    try { localStorage.removeItem(k); } catch (e) {}
+    try { sessionStorage.removeItem(k); } catch (e) {}
+  });
+  if (typeof window !== 'undefined') window.currentUser = null;
+  orderHistory = null;
+}
+
+/** Sin sesión no debe mostrarse una lista ni pedidos que quedaron guardados. */
+function purgeStaleGuestData() {
+  if (hasActiveSession()) return;
+  ['toteart_wishlist', 'toteart_orders'].forEach(k => {
+    try { localStorage.removeItem(k); } catch (e) {}
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.clearUserLocalData = clearUserLocalData;
+}
+
 function getStoredOrders() {
   if (!getCurrentUser()) {
     orderHistory = null;
@@ -884,6 +919,7 @@ function quickAddToCart(productId, event) {
     saveWishlist(wishlist);
     updateBadges();
     removeFavoriteFromCloud(productId).catch(() => {});
+    refreshCardHearts();
   }
 
   const btn = event ? event.currentTarget : null;
@@ -973,12 +1009,19 @@ function createAccessibleProductCardHtml(product) {
   const stockHtml = stock > 0
     ? `<p class="stock-text" style="color: #5A3E2D; font-weight: 500; margin: 0;"><strong style="color: #5A3E2D;">Disponibles:</strong> <strong style="color: #2D5A43;">${stock}</strong></p>`
     : `<p class="stock-text" style="margin: 0;"><strong style="color: #DC2626;">No disponible</strong></p>`;
+  const inWish = hasActiveSession() && getStoredWishlist().some(p => String(p.id) === String(product.id));
   return `
     <div class="product-card">
+      <button type="button" class="card-fav-btn${inWish ? ' is-active' : ''}" data-fav-id="${product.id}"
+              aria-pressed="${inWish ? 'true' : 'false'}"
+              aria-label="${inWish ? 'Quitar de' : 'Guardar en'} Mi Lista: ${product.title}"
+              title="${inWish ? 'Quitar de Mi Lista' : 'Guardar en Mi Lista'}"
+              onclick="cardToggleFavorite('${product.id}', event)">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+      </button>
       <a href="producto.html?id=${encodeURIComponent(product.id)}" onclick="return navigateToProduct('${product.id}', event)" class="product-card-link" aria-label="${product.title}, precio $${product.price.toFixed(2)} USD">
         <div class="product-img-box">
           <img src="img/${exactImg}" alt="${product.altText || product.title}" loading="lazy" decoding="async" width="300" height="300" onerror="handleImgFallback(this)">
-          <span class="product-card-hover-cta" aria-hidden="true">Ver detalle →</span>
         </div>
         <h4 class="product-info-title">${product.title}</h4>
       </a>
@@ -999,6 +1042,41 @@ function createAccessibleProductCardHtml(product) {
       </div>
     </div>
   `;
+}
+
+/* Corazón de favoritos en las tarjetas (misma lógica que en la ficha) */
+function setCardHeartState(btn, inWish) {
+  if (!btn) return;
+  const card = btn.closest('.product-card');
+  const title = card ? (card.querySelector('.product-info-title') || {}).textContent || '' : '';
+  btn.classList.toggle('is-active', inWish);
+  btn.setAttribute('aria-pressed', inWish ? 'true' : 'false');
+  btn.setAttribute('aria-label', `${inWish ? 'Quitar de' : 'Guardar en'} Mi Lista: ${title}`.trim());
+  btn.setAttribute('title', inWish ? 'Quitar de Mi Lista' : 'Guardar en Mi Lista');
+}
+
+async function cardToggleFavorite(productId, event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  const btn = event ? event.currentTarget : null;
+  const inWish = await toggleFavorite(productId);
+  if (inWish === null) return; // sin sesión: se mostró el aviso de iniciar sesión
+  document.querySelectorAll(`.card-fav-btn[data-fav-id="${CSS.escape(String(productId))}"]`)
+    .forEach(b => setCardHeartState(b, inWish));
+  if (btn) showButtonNotification(btn, inWish ? '♥ Guardado en Mi Lista' : 'Quitado de Mi Lista', 'wishlist');
+}
+
+/** Sincroniza los corazones visibles con Mi Lista (p. ej. tras descargarla de la nube). */
+function refreshCardHearts() {
+  const logged = hasActiveSession();
+  const ids = new Set(logged ? getStoredWishlist().map(p => String(p.id)) : []);
+  document.querySelectorAll('.card-fav-btn[data-fav-id]').forEach(b => {
+    setCardHeartState(b, ids.has(String(b.getAttribute('data-fav-id'))));
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.cardToggleFavorite = cardToggleFavorite;
+  window.refreshCardHearts = refreshCardHearts;
 }
 
 /* --------------------------------------------------------------------------
@@ -1261,7 +1339,121 @@ function inicializarSelectoresUbicacion() {
   });
 }
 
-const STRICT_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+/* --------------------------------------------------------------------------
+   NOTIFICACIÓN FLOTANTE NO BLOQUEANTE (TOAST)
+   type: 'success' | 'error' | 'info'
+   -------------------------------------------------------------------------- */
+function showToast(message, type = 'success', duration = 3500) {
+  let stack = document.getElementById('toteartToastStack');
+  if (!stack) {
+    stack = document.createElement('div');
+    stack.id = 'toteartToastStack';
+    stack.className = 'toast-stack';
+    stack.setAttribute('aria-live', 'polite');
+    document.body.appendChild(stack);
+  }
+  const icons = { success: '✓', error: '!', info: 'i' };
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  toast.innerHTML = `<span class="toast-icon" aria-hidden="true">${icons[type] || icons.info}</span><span class="toast-text"></span>`;
+  toast.querySelector('.toast-text').textContent = message;
+  stack.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+if (typeof window !== 'undefined') {
+  window.showToast = showToast;
+}
+
+/* --------------------------------------------------------------------------
+   MENSAJES DE ERROR JUNTO AL CAMPO (más cerca del usuario que un alert)
+   -------------------------------------------------------------------------- */
+function showFieldError(input, message) {
+  if (!input || !input.parentElement) return;
+  let box = input.parentElement.querySelector('.field-inline-error');
+  if (!box) {
+    box = document.createElement('div');
+    box.className = 'field-inline-error';
+    box.setAttribute('role', 'alert');
+    input.insertAdjacentElement('afterend', box);
+  }
+  box.innerHTML = message;
+  box.style.display = 'flex';
+  input.style.borderColor = '#DC2626';
+  input.setAttribute('aria-invalid', 'true');
+  input.focus();
+  const clear = () => {
+    clearFieldError(input);
+    input.removeEventListener('input', clear);
+  };
+  input.addEventListener('input', clear);
+}
+
+function clearFieldError(input) {
+  if (!input || !input.parentElement) return;
+  const box = input.parentElement.querySelector('.field-inline-error');
+  if (box) box.style.display = 'none';
+  input.style.borderColor = '';
+  input.removeAttribute('aria-invalid');
+}
+
+/* Contraseña segura: mínimo 8 caracteres, con letras y números */
+const PASSWORD_RULES = [
+  { id: 'len', text: 'Mínimo 8 caracteres', test: v => v.length >= 8 },
+  { id: 'letter', text: 'Al menos una letra', test: v => /[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(v) },
+  { id: 'number', text: 'Al menos un número', test: v => /\d/.test(v) }
+];
+
+function isPasswordSecure(value) {
+  const v = String(value || '');
+  return PASSWORD_RULES.filter(r => !r.optional).every(r => r.test(v));
+}
+
+function initPasswordStrength(input) {
+  if (!input || input.dataset.strengthInit) return;
+  input.dataset.strengthInit = 'true';
+  const wrap = document.createElement('div');
+  wrap.className = 'password-strength';
+  wrap.innerHTML = `
+    <div class="password-meter" aria-hidden="true"><span></span></div>
+    <ul class="password-rules" id="${input.id}Rules" aria-label="Requisitos de la contraseña">
+      ${PASSWORD_RULES.map(r => `<li data-rule="${r.id}">${r.text}</li>`).join('')}
+    </ul>
+  `;
+  input.insertAdjacentElement('afterend', wrap);
+  input.setAttribute('aria-describedby', `${input.id}Rules`);
+  const bar = wrap.querySelector('.password-meter span');
+  const update = () => {
+    const v = input.value;
+    let score = 0;
+    PASSWORD_RULES.forEach(r => {
+      const ok = r.test(v);
+      if (ok) score++;
+      const li = wrap.querySelector(`[data-rule="${r.id}"]`);
+      if (li) li.classList.toggle('ok', ok);
+    });
+    const pct = v ? Math.round((score / PASSWORD_RULES.length) * 100) : 0;
+    bar.style.width = pct + '%';
+    bar.style.backgroundColor = isPasswordSecure(v) ? '#2D5A43' : (score >= 2 ? '#D97706' : '#DC2626');
+    input.setAttribute('aria-invalid', v && !isPasswordSecure(v) ? 'true' : 'false');
+  };
+  input.addEventListener('input', update);
+  update();
+}
+
+if (typeof window !== 'undefined') {
+  window.showFieldError = showFieldError;
+  window.clearFieldError = clearFieldError;
+  window.isPasswordSecure = isPasswordSecure;
+  window.initPasswordStrength = initPasswordStrength;
+}
+
+const STRICT_EMAIL_REGEX =/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 function validarCorreoEstricto(email) {
   return STRICT_EMAIL_REGEX.test(String(email || '').trim());
@@ -1328,10 +1520,11 @@ document.addEventListener('DOMContentLoaded', () => {
     ensureEmailJsInitialized();
   }
 
+  purgeStaleGuestData();
   updateBadges();
   loadProductsFromSupabase();
   if (getSessionUserFromStorage().id_cliente) {
-    syncWishlistFromCloud().catch(() => {});
+    syncWishlistFromCloud().then(() => refreshCardHearts()).catch(() => {});
   }
   inicializarSelectoresUbicacion();
   inicializarValidacionesGlobalesFormularios();
@@ -1345,27 +1538,75 @@ document.addEventListener('DOMContentLoaded', () => {
 /* --------------------------------------------------------------------------
    MODAL DE CUIDADOS DEL TOTE BAG
    -------------------------------------------------------------------------- */
+// Algunas páginas (home, carrito) no incluyen el modal en su HTML: se crea aquí
+// con el mismo contenido que tienen las demás páginas.
+function ensureModalCuidados() {
+  let modal = document.getElementById('modalCuidadosTote');
+  if (modal) return modal;
+  modal = document.createElement('div');
+  modal.id = 'modalCuidadosTote';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'modalCuidadosTitle');
+  modal.style.cssText = 'display:none; position:fixed; z-index:9999; inset:0; background:rgba(0,0,0,0.55); align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(3px);';
+  modal.innerHTML = `
+    <div style="background:#fff; color:#2E4A3D; max-width:520px; width:100%; border-radius:12px; padding:28px; box-shadow:0 10px 25px rgba(0,0,0,0.2); position:relative; max-height:85vh; overflow-y:auto;">
+      <button type="button" onclick="cerrarModalCuidados()" aria-label="Cerrar" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#777;">&times;</button>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+        <h3 id="modalCuidadosTitle" style="margin:0; font-size:1.25rem; color:#2E4A3D;">Guía de Lavado y Cuidado</h3>
+      </div>
+      <p style="font-size:0.9rem; color:#555; line-height:1.5; margin-bottom:16px;">
+        Para proteger los hilos del bordado y conservar el lienzo de algodón en perfecto estado por años:
+      </p>
+      <ul style="font-size:0.88rem; color:#444; line-height:1.6; padding-left:20px; margin-bottom:20px;">
+        <li style="margin-bottom:8px;"><strong>Lavar siempre al revés:</strong> Da la vuelta al tote bag para evitar fricción directa sobre las puntadas.</li>
+        <li style="margin-bottom:8px;"><strong>Agua fría y ciclo suave:</strong> Lava a mano o en lavadora en ciclo delicado con agua fría (máx 30°C).</li>
+        <li style="margin-bottom:8px;"><strong>Detergente neutro:</strong> Evita blanqueadores o cloro que desgasten los colores del hilo.</li>
+        <li style="margin-bottom:8px;"><strong>Secado al aire libre:</strong> No uses secadora automática. Seca a la sombra en superficie plana.</li>
+        <li><strong>Planchado:</strong> Planchar del lado del revés o colocando una tela de algodón limpia sobre el bordado.</li>
+      </ul>
+      <button onclick="cerrarModalCuidados()" class="btn-primary" style="width:100%; padding:10px; background:#5C3D2E; color:#FAF8F5; border:none; border-radius:6px; font-weight:600; cursor:pointer;">
+        Entendido
+      </button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+/* Foco accesible en modales: entra al abrir y vuelve al botón que lo abrió */
+let modalReturnFocus = null;
+function openAccessibleModal(modal) {
+  if (!modal) return;
+  modalReturnFocus = document.activeElement;
+  modal.style.display = 'flex';
+  const first = modal.querySelector('button, [href], input, select, textarea');
+  if (first) setTimeout(() => first.focus(), 0);
+}
+function closeAccessibleModal(modal) {
+  if (!modal || modal.style.display === 'none') return;
+  modal.style.display = 'none';
+  if (modalReturnFocus && typeof modalReturnFocus.focus === 'function') modalReturnFocus.focus();
+  modalReturnFocus = null;
+}
+
 function abrirModalCuidados() {
-  const modal = document.getElementById('modalCuidadosTote');
-  if (modal) modal.style.display = 'flex';
+  openAccessibleModal(ensureModalCuidados());
 }
 
 function cerrarModalCuidados() {
-  const modal = document.getElementById('modalCuidadosTote');
-  if (modal) modal.style.display = 'none';
+  closeAccessibleModal(document.getElementById('modalCuidadosTote'));
 }
 
 /* --------------------------------------------------------------------------
    MODAL "CONÓCENOS"
    -------------------------------------------------------------------------- */
 function abrirModalConocenos() {
-  const m = document.getElementById('modalConocenos');
-  if (m) m.style.display = 'flex';
+  openAccessibleModal(document.getElementById('modalConocenos'));
 }
 
 function cerrarModalConocenos() {
-  const m = document.getElementById('modalConocenos');
-  if (m) m.style.display = 'none';
+  closeAccessibleModal(document.getElementById('modalConocenos'));
 }
 
 // Cerrar modales con clic exterior o tecla Escape
@@ -1411,19 +1652,28 @@ if (typeof window !== 'undefined') {
 
     // Prioridad al contenido: se oculta en cuanto los productos están pintados
     // (o la página terminó de cargar), sin esperar a imágenes fuera de pantalla.
+    // Bienvenida: visible al menos 1.5 s (para que se lea la marca) y
+    // se retira en cuanto el contenido está listo; nunca más de 3.5 s.
+    const MIN_VISIBLE_MS = 1500;
     let oculto = false;
-    const ocultarPreloader = () => {
+    const ocultarAhora = () => {
       if (oculto) return;
       oculto = true;
       preloader.style.opacity = '0';
+      preloader.style.visibility = 'hidden';
+      preloader.setAttribute('aria-hidden', 'true');
       setTimeout(() => {
         preloader.style.display = 'none';
-      }, 300);
+      }, 450);
+    };
+    const ocultarPreloader = () => {
+      const restante = MIN_VISIBLE_MS - performance.now();
+      if (restante > 0) setTimeout(ocultarAhora, restante);
+      else ocultarAhora();
     };
     window.__toteartHidePreloader = ocultarPreloader;
     window.addEventListener('load', ocultarPreloader);
-    // Tope de seguridad: nunca más de 2.5 s de pantalla de carga
-    document.addEventListener('DOMContentLoaded', () => setTimeout(ocultarPreloader, 2500));
+    setTimeout(ocultarAhora, 3500);
   } else {
     // Si es navegación entre pantallas internas, suprimir inmediatamente sin animación
     preloader.style.display = 'none';

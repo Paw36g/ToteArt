@@ -14,23 +14,68 @@
   <script src="app.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
-  <!-- Splash Screen / Preloader -->
-  <div id="toteartPreloader" style="position:fixed; inset:0; background:#FAF8F5; z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity 0.4s ease, visibility 0.4s ease;">
-    <div style="text-align:center;">
-      <div style="font-size:2rem; font-weight:700; color:#5C3D2E; letter-spacing:1px; margin-bottom:8px; font-family:inherit;">
-        ToteArt
-      </div>
-      <div style="font-size:0.85rem; color:#7A6E65; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:20px;">
-        Bordado Artesanal
-      </div>
-      <div style="width:40px; height:40px; border:3px solid #E0DCD3; border-top-color:#5C3D2E; border-radius:50%; animation:toteartSpin 0.8s linear infinite; margin:0 auto;"></div>
+  <!-- Splash Screen / Preloader (bienvenida: solo al abrir la web o al recargar) -->
+  <div id="toteartPreloader" role="status" aria-label="Cargando ToteArt">
+    <div class="ta-splash-inner">
+      <img class="ta-splash-logo" src="img/Logo ToteArt.jpeg" alt="" width="84" height="84">
+      <div class="ta-splash-name">ToteArt</div>
+      <div class="ta-splash-tagline">Bordado artesanal · Quito</div>
+      <div class="ta-splash-stitch" aria-hidden="true"><span></span></div>
     </div>
   </div>
+  <script>
+    (function () {
+      try {
+        var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+        var esRecarga = nav && nav.type === 'reload';
+        if (sessionStorage.getItem('toteart_sitio_iniciado') && !esRecarga) {
+          document.getElementById('toteartPreloader').style.display = 'none';
+        }
+      } catch (e) {}
+    })();
+  </script>
 
   <style>
-  @keyframes toteartSpin {
-    to { transform: rotate(360deg); }
+  #toteartPreloader {
+    position: fixed; inset: 0; z-index: 99999;
+    background: radial-gradient(circle at 50% 42%, #FFFFFF 0%, #FAF8F5 55%, #F1ECE4 100%);
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.45s ease, visibility 0.45s ease;
+  }
+  .ta-splash-inner { text-align: center; animation: taSplashIn 0.6s ease both; }
+  .ta-splash-logo {
+    width: 84px; height: 84px; border-radius: 50%; object-fit: cover;
+    border: 3px solid #FFFFFF; box-shadow: 0 8px 24px rgba(92, 61, 46, 0.18);
+    margin: 0 auto 16px; display: block;
+    animation: taSplashFloat 2.4s ease-in-out infinite;
+  }
+  .ta-splash-name {
+    font-size: 2.1rem; font-weight: 700; color: #5C3D2E; letter-spacing: 1px;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  .ta-splash-tagline {
+    font-size: 0.78rem; color: #7A6E65; letter-spacing: 2px; text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .ta-splash-stitch {
+    width: 150px; height: 2px; margin: 20px auto 0; overflow: hidden;
+    background-image: linear-gradient(90deg, #E0D6C8 60%, transparent 0);
+    background-size: 10px 2px;
+  }
+  .ta-splash-stitch span {
+    display: block; height: 100%; width: 100%;
+    background-image: linear-gradient(90deg, #5C3D2E 60%, transparent 0);
+    background-size: 10px 2px;
+    transform-origin: left; animation: taSplashStitch 1.3s ease-in-out infinite;
+  }
+  @keyframes taSplashIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes taSplashFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes taSplashStitch { 0% { transform: scaleX(0); } 70% { transform: scaleX(1); } 100% { transform: scaleX(1); opacity: 0; } }
+  @keyframes toteartSpin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .ta-splash-inner, .ta-splash-logo, .ta-splash-stitch span { animation: none; }
   }
   </style>
 
@@ -56,7 +101,7 @@
         <!-- 2. Mi Lista -->
         <a href="lista.html" class="nav-link" id="navWishlistBtn" 
            style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: #5C3D2E; font-weight: 500; font-size: 0.95rem;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#5C3D2E" stroke="#5C3D2E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+          <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="#5C3D2E" stroke="#5C3D2E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
           </svg>
           <span>Mi Lista (<span id="wishlistCountNav">0</span>)</span>
@@ -65,7 +110,7 @@
         <!-- 3. Mis Pedidos -->
         <a href="pedidos.html" class="nav-link" id="navOrdersBtn" 
            style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: #5C3D2E; font-weight: 500; font-size: 0.95rem;">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5C3D2E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+          <svg aria-hidden="true" focusable="false" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5C3D2E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
             <path d="M12 2L3 7v9l9 5 9-5V7l-9-5z"></path>
             <path d="M12 22V12"></path>
             <path d="M20.5 7.5L12 12 3.5 7.5"></path>
@@ -92,7 +137,7 @@
   <!-- =========================================================================
        CONTENIDO PRINCIPAL: CHECKOUT & CONFIRMACIÓN
        ========================================================================= -->
-  <main class="main-wrapper">
+  <main id="contenido" tabindex="-1" class="main-wrapper">
     
     <!-- 1. VISTA DE FORMULARIO DE CHECKOUT -->
     <div id="checkoutFormView">
@@ -631,6 +676,27 @@
       return endOfMonth >= now;
     }
 
+    // Mensaje específico: indica si el problema está en el mes o en el año
+    function getExpiryErrorMessage(value) {
+      if (isExpiryValid(value)) return '';
+      const digits = String(value || '').replace(/\D/g, '');
+      const now = new Date();
+      const currentYY = now.getFullYear() % 100;
+      const currentMonth = now.getMonth() + 1;
+      if (digits.length >= 2) {
+        const month = parseInt(digits.slice(0, 2), 10);
+        if (month < 1 || month > 12) return 'Mes inválido: debe estar entre 01 y 12';
+      }
+      if (digits.length < 4) return 'Fecha incompleta: usa el formato MM/AA';
+      const month = parseInt(digits.slice(0, 2), 10);
+      const yy = parseInt(digits.slice(2, 4), 10);
+      if (yy < currentYY) return `Año inválido: la tarjeta venció en 20${String(yy).padStart(2, '0')}`;
+      if (yy === currentYY && month < currentMonth) {
+        return `Mes inválido: en 20${String(yy).padStart(2, '0')} la tarjeta venció en el mes ${String(month).padStart(2, '0')}`;
+      }
+      return 'Fecha inválida';
+    }
+
     function setFieldError(inputId, message, show) {
       const input = document.getElementById(inputId) || document.getElementById(inputId + 'Input');
       const error = document.getElementById(inputId + 'Error') || document.getElementById(inputId.replace('Input', '') + 'Error');
@@ -658,7 +724,7 @@
       const validLength = isDiners ? (digits.length === 14 || digits.length === 16) : (digits.length === 16);
       const errors = {
         cardNumber: (!validLength || !isValidLuhn(digits)) ? 'Número inválido' : '',
-        cardExpiry: !isExpiryValid(expiry) ? 'Fecha inválida' : '',
+        cardExpiry: getExpiryErrorMessage(expiry),
         cardCvv: !/^\d{3,4}$/.test(cvv) ? 'CVV inválido (3 o 4 dígitos)' : '',
         cardHolder: holderLetters.length < 5 ? 'Nombre inválido (mínimo 5 letras)' : ''
       };
@@ -1049,7 +1115,7 @@
           Tote bags de lienzo 100% algodón bordados a mano. Cada pieza es única, resistente y sustentable.
         </p>
         <div style="font-size: 0.85rem; color: #b8b0a2; margin-bottom: 16px; display: inline-flex; align-items: center; gap: 6px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d0c9be" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg aria-hidden="true" focusable="false" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d0c9be" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
             <circle cx="12" cy="10" r="3"></circle>
           </svg>
@@ -1075,8 +1141,8 @@
           
           <!-- 1. Bolsa lineal para cuidados -->
           <li style="margin-bottom: 10px;">
-            <a href="javascript:void(0)" onclick="abrirModalCuidados()" style="color: #E2B97F; text-decoration: underline; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E2B97F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <a href="#" role="button" aria-haspopup="dialog" onclick="event.preventDefault(); abrirModalCuidados()" style="color: #E2B97F; text-decoration: underline; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;">
+              <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E2B97F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 7h12l1 14H5L6 7z"></path>
                 <path d="M9 10V6a3 3 0 0 1 6 0v4"></path>
               </svg>
@@ -1086,7 +1152,7 @@
 
           <!-- 2. Camión rápido para envíos -->
           <li style="margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#d0c9be" style="flex-shrink: 0; margin-top: 4px;">
+            <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="#d0c9be" style="flex-shrink: 0; margin-top: 4px;">
               <path d="M1 7h7v2H1zm0 4h10v2H1zm0 4h7v2H1zm17-8h-8v10h8v-3h3l2-3v-4h-5zm-5 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm7 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/>
             </svg>
             <div>
@@ -1132,13 +1198,12 @@
   </footer>
 
   <!-- Modal de Cuidados del Tote Bag -->
-  <div id="modalCuidadosTote" style="display:none; position:fixed; z-index:9999; inset:0; background:rgba(0,0,0,0.55); align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(3px);">
+  <div id="modalCuidadosTote" role="dialog" aria-modal="true" aria-labelledby="modalCuidadosTitle" style="display:none; position:fixed; z-index:9999; inset:0; background:rgba(0,0,0,0.55); align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(3px);">
     <div style="background:#fff; color:#2E4A3D; max-width:520px; width:100%; border-radius:12px; padding:28px; box-shadow:0 10px 25px rgba(0,0,0,0.2); position:relative;">
-      <button onclick="cerrarModalCuidados()" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#777;">&times;</button>
+      <button type="button" aria-label="Cerrar" onclick="cerrarModalCuidados()" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#777;">&times;</button>
       
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
-        <span style="font-size:1.6rem;">🧺</span>
-        <h3 style="margin:0; font-size:1.25rem; color:#2E4A3D;">Guía de Lavado y Cuidado</h3>
+        <h3 id="modalCuidadosTitle" style="margin:0; font-size:1.25rem; color:#2E4A3D;">Guía de Lavado y Cuidado</h3>
       </div>
       
       <p style="font-size:0.9rem; color:#555; line-height:1.5; margin-bottom:16px;">
@@ -1160,12 +1225,12 @@
   </div>
 
   <!-- Modal "Conócenos" -->
-  <div id="modalConocenos" style="display:none; position:fixed; z-index:9999; inset:0; background:rgba(0,0,0,0.55); align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(3px);">
+  <div id="modalConocenos" role="dialog" aria-modal="true" aria-labelledby="modalConocenosTitle" style="display:none; position:fixed; z-index:9999; inset:0; background:rgba(0,0,0,0.55); align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(3px);">
     <div style="background:#fff; color:#2E4A3D; max-width:540px; width:100%; border-radius:12px; padding:28px; box-shadow:0 10px 25px rgba(0,0,0,0.2); position:relative; max-height:85vh; overflow-y:auto;">
-      <button onclick="cerrarModalConocenos()" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#777;">&times;</button>
+      <button type="button" aria-label="Cerrar" onclick="cerrarModalConocenos()" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#777;">&times;</button>
       
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-        <h3 style="margin:0; font-size:1.3rem; color:#2E4A3D;">Nuestra Historia</h3>
+        <h3 id="modalConocenosTitle" style="margin:0; font-size:1.3rem; color:#2E4A3D;">Nuestra Historia</h3>
       </div>
       
       <p style="font-size:0.92rem; color:#444; line-height:1.6; margin-bottom:14px;">

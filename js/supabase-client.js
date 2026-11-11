@@ -905,6 +905,8 @@ function scheduleOrderStatusProgression(order, onChange, userOverride) {
 // --------------------------------------------------------------------------
 // 7. GUÍA SERVIENTREGA (10 DÍGITOS EMPEZANDO CON 90) Y SISTEMA EMAILJS (2 PLANTILLAS)
 // --------------------------------------------------------------------------
+const TOTEART_STORE_URL = 'https://toteartec.vercel.app';
+
 function generateServientregaGuide() {
   const guia = '90' + Math.floor(10000000 + Math.random() * 90000000).toString();
   return guia;
@@ -981,13 +983,27 @@ async function sendWelcomeEmail(nuevoUsuario) {
   const nombre = activeUser.nombres || activeUser.nombre || 'Cliente';
   if (!validEmail) return { sent: false };
 
+  // Enlace oficial de la tienda, en un recuadro (la plantilla de EmailJS
+  // debe incluir {{{boton_tienda_html}}} o usar {{link_tienda}}).
+  const welcomeParams = {
+    nombre_usuario: nombre,
+    email_usuario: validEmail,
+    link_tienda: TOTEART_STORE_URL,
+    boton_tienda_html: `
+      <div style="background-color:#FAF7F2; border:1px solid #EADDD3; border-radius:8px; padding:20px; text-align:center; margin:18px 0;">
+        <p style="margin:0 0 12px 0; font-size:14px; color:#6F574E;">Descubre nuestros tote bags bordados a mano:</p>
+        <a href="${TOTEART_STORE_URL}" target="_blank" rel="noopener noreferrer" style="display:inline-block; background-color:#5A3E2D; color:#FFFFFF; text-decoration:none; padding:12px 24px; border-radius:6px; font-weight:600; font-size:14px;">
+          Visitar la tienda ToteArt →
+        </a>
+        <p style="margin:12px 0 0 0; font-size:12px; color:#9C8F84;">${TOTEART_STORE_URL.replace(/^https?:\/\//, '')}</p>
+      </div>
+    `
+  };
+
   ensureEmailJsInitialized();
   if (typeof emailjs !== 'undefined' && typeof emailjs.send === 'function') {
     emailjs.init('eP9eKHycZP0E1SD-G');
-    return emailjs.send(EMAIL_CONFIG.serviceID, EMAIL_CONFIG.templateBienvenida, {
-      nombre_usuario: nombre,
-      email_usuario: validEmail
-    })
+    return emailjs.send(EMAIL_CONFIG.serviceID, EMAIL_CONFIG.templateBienvenida, welcomeParams)
       .then(res => {
         console.log('✅ Bienvenida enviada:', res.status);
         return { sent: true, status: res.status };
@@ -997,10 +1013,7 @@ async function sendWelcomeEmail(nuevoUsuario) {
         return { sent: false, error: err };
       });
   }
-  return sendEmailJsTemplate(EMAIL_CONFIG.templateBienvenida, {
-    nombre_usuario: nombre,
-    email_usuario: validEmail
-  });
+  return sendEmailJsTemplate(EMAIL_CONFIG.templateBienvenida, welcomeParams);
 }
 
 /**
@@ -1051,11 +1064,6 @@ async function sendOrderConfirmationEmail(order, user) {
           <tr><td style="color: #6F574E;">Costo de entrega:</td><td align="right" style="color: #2D5A43; font-weight: 600;">$0.00</td></tr>
           <tr><td style="font-size: 16px; font-weight: 700; color: #5A3E2D; padding-top: 8px;">Total pagado:</td><td align="right" style="font-size: 18px; font-weight: 800; color: #2D5A43; padding-top: 8px;">$${orderData.total.toFixed(2)} USD</td></tr>
         </table>
-        <div style="text-align: center; margin-top: 24px;">
-          <a href="${typeof window !== 'undefined' && window.location ? window.location.origin : 'https://toteart.ec'}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #5A3E2D; color: #FFFFFF; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px;">
-            Revisar el estado de mi pedido en ToteArt →
-          </a>
-        </div>
       `
     };
   } else {
