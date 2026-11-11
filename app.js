@@ -190,6 +190,97 @@ function resolveExactImgFile(rawUrl, title, id) {
   return cleaned.replace(/\.jpg$/i, '.jpeg');
 }
 
+/* --------------------------------------------------------------------------
+   MEDIDAS Y USO DE CADA DISEÑO
+   Medidas disponibles por diseño (clave = archivo canónico de PRODUCT_KEYWORDS_TO_FILE).
+   Solo informativo: no altera carrito, stock ni pedidos.
+   -------------------------------------------------------------------------- */
+const SIZE_INFO = {
+  mini: {
+    key: 'mini', label: 'Mini', short: 'Mini',
+    dims: '28 × 32 cm', handles: 'Asas de 18 cm',
+    tagline: 'Compacto y ligero para lo esencial',
+    use: 'Básicos / Ligero', useDesc: 'Para llevar solo lo necesario',
+    img: 'img/medidas/medida-mini.webp', useImg: 'img/medidas/uso-basicos-ligero.webp'
+  },
+  estandar: {
+    key: 'estandar', label: 'Estándar', short: 'Estándar',
+    dims: '35 × 40 cm', handles: 'Asas de 25 cm',
+    tagline: 'La medida clásica para el día a día',
+    use: 'Estudio / Trabajo', useDesc: 'Ideal para la U o la oficina',
+    img: 'img/medidas/medida-estandar.webp', useImg: 'img/medidas/uso-estudio-trabajo.webp'
+  },
+  grande: {
+    key: 'grande', label: 'Grande / XL', short: 'XL',
+    dims: '40 × 45 cm', handles: 'Asas de 30 cm',
+    tagline: 'Espacio extra para tus viajes o compras',
+    use: 'Creativo / Diario', useDesc: 'Perfecto para tus salidas creativas',
+    img: 'img/medidas/medida-grande.webp', useImg: 'img/medidas/uso-creativo-diario.webp'
+  }
+};
+const SIZE_ORDER = ['mini', 'estandar', 'grande'];
+
+const SIZES_BY_FILE = {
+  // Flores
+  'Tote de girasol.jpg': ['estandar', 'grande'],
+  'Tote con arreglo floral.jpeg': ['estandar'],
+  'Tote de flores de cerezo.jpeg': ['mini', 'estandar'],
+  'Tote con lavandas.jpeg': ['mini', 'estandar', 'grande'],
+  'tote margaritas.jpeg': ['mini'],
+  'tote ramo de tulipanes rosados.jpeg': ['estandar', 'grande'],
+  'tote rosa roja.jpeg': ['mini', 'estandar'],
+  'tote flor de loto en tonos acuarela.jpeg': ['grande'],
+  'tote diente de león con semillas esparciéndose al viento.jpeg': ['estandar'],
+  'tote orquídea morada.jpeg': ['mini', 'estandar', 'grande'],
+  'tote peonías abiertas.jpeg': ['estandar', 'grande'],
+  'tote racimo de hortensias azules y lilas.jpeg': ['mini'],
+  // Animales
+  'Tote de perrito al estilo Snoopy.jpeg': ['mini', 'estandar'],
+  'Tote de colibrí.jpeg': ['mini'],
+  'Tote de zorro otoñal.jpeg': ['estandar', 'grande'],
+  'Tote de gato naranja.jpg': ['estandar'],
+  'Tote gato negro.png': ['mini', 'estandar', 'grande'],
+  'tote abeja robusta polinizando pequeñas flores.png': ['mini'],
+  'tote búho posado en una rama de pino.jpeg': ['estandar', 'grande'],
+  'tote ciervo rodeado de hojas otoñales.jpeg': ['grande'],
+  'tote lobo aullando a la luna.jpeg': ['estandar', 'grande'],
+  'tote mariposa monarca.jpeg': ['mini', 'estandar'],
+  'tote oso panda comiendo hojas de bambú.jpeg': ['mini', 'estandar', 'grande'],
+  'tote pequeña rana verde sobre un hongo silvestre.jpeg': ['mini'],
+  // Personajes
+  'Tote de Mi vecino Totoro.jpeg': ['estandar', 'grande'],
+  'Tote de Carboncillos del viaje de chihiro.jpeg': ['mini'],
+  'Tote de BMO.jpeg': ['mini', 'estandar'],
+  'Tote de Calcifer.jpeg': ['estandar'],
+  'Tote de Kirby.jpeg': ['mini'],
+  'Tote de Sin Cara.jpeg': ['estandar', 'grande'],
+  'Tote Appa de Avatar.jpeg': ['grande'],
+  'Tote Cinnamoroll.jpeg': ['mini', 'estandar'],
+  'Tote Jiji de kiki entregas a domicilio.jpeg': ['mini', 'estandar', 'grande'],
+  'Tote Luna.jpeg': ['estandar'],
+  'Tote Pikachu.jpeg': ['mini', 'estandar'],
+  'Tote Pochita.jpeg': ['estandar', 'grande']
+};
+
+/** Devuelve las medidas disponibles de un producto (por defecto: Estándar). */
+function getProductSizes(product) {
+  if (!product) return ['estandar'];
+  if (Array.isArray(product.sizes) && product.sizes.length) return product.sizes;
+  const combined = `${stripAccentsAndExt(product.imgFile)} ${stripAccentsAndExt(product.title)}`;
+  for (const entry of PRODUCT_KEYWORDS_TO_FILE) {
+    if (entry.keys.some(k => combined.includes(k))) {
+      return SIZES_BY_FILE[entry.file] || ['estandar'];
+    }
+  }
+  return ['estandar'];
+}
+
+if (typeof window !== 'undefined') {
+  window.SIZE_INFO = SIZE_INFO;
+  window.SIZE_ORDER = SIZE_ORDER;
+  window.getProductSizes = getProductSizes;
+}
+
 function normalizeCategoryFromRow(p) {
   const idCat = Number(p.id_categoria);
   if (idCat === 1) return { cat: 'flores', catLabel: 'Colección Flores' };
@@ -253,6 +344,7 @@ async function loadProductsFromSupabase() {
         const stockNum = typeof p.stock === 'number' ? p.stock : (parseInt(p.stock, 10) || 0);
         const ratingNum = parseFloat(p.rating_promedio || p.calificacion_promedio || p.rating) || 4.8;
         stockMap[id] = stockNum;
+        const imgFile = resolveExactImgFile(rawImage, title, id);
         return {
           id,
           title,
@@ -263,7 +355,8 @@ async function loadProductsFromSupabase() {
           rating: Number(ratingNum.toFixed(1)),
           desc,
           specs: p.especificaciones || '',
-          imgFile: resolveExactImgFile(rawImage, title, id),
+          imgFile,
+          sizes: getProductSizes({ imgFile, title }),
           isFeatured: Boolean(p.destacado || p.es_destacado || p.featured)
         };
       });
@@ -275,6 +368,9 @@ async function loadProductsFromSupabase() {
     }
   } catch (err) {
     console.warn('[Supabase] Error al cargar productos:', err);
+  }
+  if (typeof window.__toteartHidePreloader === 'function') {
+    requestAnimationFrame(() => window.__toteartHidePreloader());
   }
   return window.PRODUCTS;
 }
@@ -439,7 +535,62 @@ async function syncWishlistFromCloud() {
   return localList;
 }
 
+/* --------------------------------------------------------------------------
+   AVISO: "INICIA SESIÓN PARA GUARDAR EN TU LISTA"
+   Se muestra cuando un invitado intenta guardar un diseño en Mi Lista.
+   -------------------------------------------------------------------------- */
+function hasActiveSession() {
+  const u = getCurrentUser();
+  return !!(u && (u.id_cliente || u.id_usuario || u.email));
+}
+
+function cerrarModalLoginLista() {
+  const m = document.getElementById('modalLoginLista');
+  if (m) m.remove();
+}
+
+function abrirModalLoginLista() {
+  cerrarModalLoginLista();
+  const here = (window.location.pathname.split('/').pop() || 'index.html') + window.location.search;
+  const redirect = encodeURIComponent(here);
+  const modal = document.createElement('div');
+  modal.id = 'modalLoginLista';
+  modal.className = 'login-required-overlay';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'modalLoginListaTitle');
+  modal.innerHTML = `
+    <div class="login-required-card">
+      <button type="button" class="login-required-close" aria-label="Cerrar" onclick="cerrarModalLoginLista()">&times;</button>
+      <div class="login-required-icon" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+      </div>
+      <h3 id="modalLoginListaTitle">Inicia sesión para guardar en tu lista</h3>
+      <p>Así tus diseños favoritos quedan guardados en tu cuenta y los verás en cualquier dispositivo.</p>
+      <div class="login-required-actions">
+        <a href="login.html?redirect=${redirect}" class="login-required-primary">Iniciar sesión</a>
+        <a href="registro.html?redirect=${redirect}" class="login-required-secondary">Crear cuenta</a>
+      </div>
+    </div>
+  `;
+  modal.addEventListener('click', (e) => { if (e.target === modal) cerrarModalLoginLista(); });
+  document.body.appendChild(modal);
+  const firstBtn = modal.querySelector('.login-required-primary');
+  if (firstBtn) firstBtn.focus();
+}
+
+if (typeof window !== 'undefined') {
+  window.abrirModalLoginLista = abrirModalLoginLista;
+  window.cerrarModalLoginLista = cerrarModalLoginLista;
+}
+
 async function toggleFavorite(productId) {
+  // Sin sesión: no se guarda nada, se invita a iniciar sesión o registrarse
+  if (!hasActiveSession()) {
+    abrirModalLoginLista();
+    return null;
+  }
+
   let wishlist = (typeof getStoredWishlist === 'function') ? getStoredWishlist() : [];
   const index = wishlist.findIndex(p => String(p.id) === String(productId));
   let inWish = false;
@@ -796,7 +947,7 @@ function createCompactHomeCardHtml(product) {
     <div class="product-card" onclick="navigateToProduct('${product.id}', event)" style="cursor: pointer; flex: 0 0 185px; min-width: 185px; padding: 10px;">
       <a href="producto.html?id=${encodeURIComponent(product.id)}" onclick="return navigateToProduct('${product.id}', event)" class="product-card-link" aria-label="${product.title}, precio $${product.price.toFixed(2)} USD">
         <div class="product-img-box" style="margin-bottom: 8px;">
-          <img src="img/${exactImg}" alt="${product.altText || product.title}" onerror="handleImgFallback(this)">
+          <img src="img/${exactImg}" alt="${product.altText || product.title}" loading="lazy" decoding="async" width="185" height="185" onerror="handleImgFallback(this)">
         </div>
         <h4 class="product-info-title" style="font-size: 13px; min-height: 32px; margin-bottom: 4px;">${product.title}</h4>
         <div class="product-rating" style="margin-bottom: 6px;">
@@ -826,10 +977,14 @@ function createAccessibleProductCardHtml(product) {
     <div class="product-card">
       <a href="producto.html?id=${encodeURIComponent(product.id)}" onclick="return navigateToProduct('${product.id}', event)" class="product-card-link" aria-label="${product.title}, precio $${product.price.toFixed(2)} USD">
         <div class="product-img-box">
-          <img src="img/${exactImg}" alt="${product.altText || product.title}" onerror="handleImgFallback(this)">
+          <img src="img/${exactImg}" alt="${product.altText || product.title}" loading="lazy" decoding="async" width="300" height="300" onerror="handleImgFallback(this)">
+          <span class="product-card-hover-cta" aria-hidden="true">Ver detalle →</span>
         </div>
         <h4 class="product-info-title">${product.title}</h4>
       </a>
+      <div class="product-size-chips" aria-label="Medidas disponibles">
+        ${getProductSizes(product).map(k => `<span class="product-size-chip" title="${SIZE_INFO[k].label}: ${SIZE_INFO[k].dims}">${SIZE_INFO[k].short}</span>`).join('')}
+      </div>
       <div class="product-rating">
         <span class="star" style="color:#D97706" aria-hidden="true">★</span>
         <span data-rating-text-for="${product.id}">${ratingSummary.text}</span>
@@ -927,7 +1082,7 @@ function initRealtimeSearchDropdown(searchInput) {
       const exactImg = resolveExactImgFile(p.imgFile, p.title, p.id);
       return `
         <div role="option" data-prod-id="${p.id}" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #F4F1EA; transition: background 0.15s;">
-          <img src="img/${exactImg}" alt="${p.title}" onerror="handleImgFallback(this)" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: #FAF7F2;">
+          <img src="img/${exactImg}" alt="${p.title}" loading="lazy" decoding="async" onerror="handleImgFallback(this)" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: #FAF7F2;">
           <div style="flex: 1; min-width: 0;">
             <div style="font-size: 13px; font-weight: 600; color: #5A3E2D; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.title}</div>
           </div>
@@ -1213,34 +1368,19 @@ function cerrarModalConocenos() {
   if (m) m.style.display = 'none';
 }
 
-/* --------------------------------------------------------------------------
-   MODAL DE AYUDA / FAQ
-   -------------------------------------------------------------------------- */
-function abrirModalAyuda() {
-  const m = document.getElementById('modalAyuda');
-  if (m) m.style.display = 'flex';
-}
-
-function cerrarModalAyuda() {
-  const m = document.getElementById('modalAyuda');
-  if (m) m.style.display = 'none';
-}
-
 // Cerrar modales con clic exterior o tecla Escape
 window.addEventListener('click', (e) => {
   const modalCuidados = document.getElementById('modalCuidadosTote');
   if (e.target === modalCuidados) cerrarModalCuidados();
   const modalConocenos = document.getElementById('modalConocenos');
   if (e.target === modalConocenos) cerrarModalConocenos();
-  const modalAyuda = document.getElementById('modalAyuda');
-  if (e.target === modalAyuda) cerrarModalAyuda();
 });
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     cerrarModalCuidados();
     cerrarModalConocenos();
-    cerrarModalAyuda();
+    cerrarModalLoginLista();
   }
 });
 
@@ -1249,8 +1389,6 @@ if (typeof window !== 'undefined') {
   window.cerrarModalCuidados = cerrarModalCuidados;
   window.abrirModalConocenos = abrirModalConocenos;
   window.cerrarModalConocenos = cerrarModalConocenos;
-  window.abrirModalAyuda = abrirModalAyuda;
-  window.cerrarModalAyuda = cerrarModalAyuda;
 }
 
 /* --------------------------------------------------------------------------
@@ -1271,15 +1409,21 @@ if (typeof window !== 'undefined') {
     // Marcar como iniciado para la sesión
     sessionStorage.setItem('toteart_sitio_iniciado', 'true');
 
-    // Desvanecer normalmente
-    window.addEventListener('load', () => {
+    // Prioridad al contenido: se oculta en cuanto los productos están pintados
+    // (o la página terminó de cargar), sin esperar a imágenes fuera de pantalla.
+    let oculto = false;
+    const ocultarPreloader = () => {
+      if (oculto) return;
+      oculto = true;
+      preloader.style.opacity = '0';
       setTimeout(() => {
-        preloader.style.opacity = '0';
-        setTimeout(() => {
-          preloader.style.display = 'none';
-        }, 300);
-      }, 400);
-    });
+        preloader.style.display = 'none';
+      }, 300);
+    };
+    window.__toteartHidePreloader = ocultarPreloader;
+    window.addEventListener('load', ocultarPreloader);
+    // Tope de seguridad: nunca más de 2.5 s de pantalla de carga
+    document.addEventListener('DOMContentLoaded', () => setTimeout(ocultarPreloader, 2500));
   } else {
     // Si es navegación entre pantallas internas, suprimir inmediatamente sin animación
     preloader.style.display = 'none';
