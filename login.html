@@ -226,10 +226,18 @@
         return;
       }
 
-      const { data, error } = await supabase.rpc('fn_verificar_login', {
+      // Verificación con contraseñas cifradas (bcrypt) en la base de datos.
+      // Si la función segura aún no está instalada, se usa la anterior.
+      let { data, error } = await supabase.rpc('fn_login_seguro', {
         p_email: cleanEmail,
         p_password: inputPass
       });
+      if (error && (error.code === 'PGRST202' || /fn_login_seguro/i.test(error.message || ''))) {
+        ({ data, error } = await supabase.rpc('fn_verificar_login', {
+          p_email: cleanEmail,
+          p_password: inputPass
+        }));
+      }
 
       if (error || !data || data.length === 0 || !data[0].valido) {
         alert("Correo electrónico o contraseña incorrectos.");

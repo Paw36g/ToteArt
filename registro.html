@@ -273,7 +273,7 @@
         return;
       }
 
-      const { data: newUser, error: userError } = await window.supabaseClient
+      let { data: newUser, error: userError } = await window.supabaseClient
         .from('USUARIOS')
         .insert([
           {
@@ -283,8 +283,26 @@
             activo: true
           }
         ])
-        .select()
+        // Solo se pide el id: la columna de contraseña no se devuelve al navegador
+        // (la base de datos la cifra con bcrypt al guardarla)
+        .select('id_usuario')
         .single();
+      if (userError && userError.code === '42501') {
+        // Respaldo: insertar sin devolver columnas y luego obtener el id por correo
+        const ins = await window.supabaseClient
+          .from('USUARIOS')
+          .insert([{ email: cleanEmail, password_hash: password, id_rol: 2, activo: true }]);
+        userError = ins.error;
+        if (!userError) {
+          const found = await window.supabaseClient
+            .from('USUARIOS')
+            .select('id_usuario')
+            .eq('email', cleanEmail)
+            .maybeSingle();
+          newUser = found.data;
+          userError = found.error || (found.data ? null : { message: 'No se pudo confirmar la cuenta creada.' });
+        }
+      }
       if (userError) {
         console.error('Error al crear usuario:', userError);
         alert(`No se pudo crear la cuenta: ${userError.message}`);
